@@ -1,0 +1,16 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "{449C17FB-4770-986F-B728-418070BE29C3}",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "HexSystem",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine"
+			]
+		}
+	]
+}
