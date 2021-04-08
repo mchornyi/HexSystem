@@ -2,7 +2,6 @@
 
 
 #include "HexWorld.h"
-#include "HexModel.h"
 #include "DrawDebugHelpers.h"
 
 DECLARE_LOG_CATEGORY_EXTERN( LogTrace, Log, All );
@@ -19,11 +18,7 @@ AHexWorld::AHexWorld()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	if ( WITH_EDITOR )
-    {
-        PrimaryActorTick.bCanEverTick = true;
-        PrimaryActorTick.bStartWithTickEnabled = true;
-    }
+	Generate( );
 }
 
 // Called when the game starts or when spawned
@@ -41,6 +36,8 @@ void AHexWorld::PostEditChangeProperty( struct FPropertyChangedEvent& PropertyCh
 void AHexWorld::Generate( )
 {
 	UE_LOG( LogTrace, Display, TEXT( __FUNCTION__ ) );
+
+	FHexModel::GenerateHexMap( HexMap, 3 );
 }
 
 // Called every frame
@@ -51,17 +48,23 @@ void AHexWorld::Tick(float DeltaTime)
 	const FVector& actorLoc = GetTransform( ).GetLocation( );
 
 	UWorld* inWorld = GetWorld();
-	DrawDebugHex( inWorld, FHexModel::FLayout( FHexModel::LayoutPointy,
-									  FHexModel::FSize( 100, 100 ),
-									  FHexModel::FOrigin( actorLoc.X, actorLoc.Y ) ),
-				  FHexModel::FHex( 0, 0, 0 ),
-				  actorLoc.Z );
+
+	for ( const auto& hex : HexMap )
+	{
+        DrawDebugHex( inWorld, FHexModel::FLayout( FHexModel::LayoutPointy,
+                                                   FHexModel::FSize( 100, 100 ),
+                                                   FHexModel::FOrigin( actorLoc.X, actorLoc.Y ) ),
+					  hex,
+                      actorLoc.Z );
+	}
 }
 
+#ifdef WITH_EDITOR
 bool AHexWorld::ShouldTickIfViewportsOnly( ) const
 {
     return true;
 }
+#endif
 
 namespace
 {
@@ -75,8 +78,8 @@ namespace
 		const TArray<FHexModel::FPoint> corners = FHexModel::PolygonCorners(layout, hex);
 
 		static const FColor Color( 255, 0, 0 );
-		static bool bPersistentLines = true;
-		static float LifeTime = 1.0f;
+		static bool bPersistentLines = false;
+		static float LifeTime = 0.0f;
 		static uint8 DepthPriority = 0;
 		static const float Thickness = 10;
 

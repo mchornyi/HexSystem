@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Containers/Set.h"
 
 class FHexModel
 {
@@ -108,7 +109,7 @@ public:
         const FOrientation& M = layout.orientation;
         double x = ( M.f0 * h.q + M.f1 * h.r ) * layout.size.X;
         double y = ( M.f2 * h.q + M.f3 * h.r ) * layout.size.Y;
-        return FPoint( x + layout.origin.Y, y + layout.origin.Y );
+        return FPoint( x + layout.origin.X, y + layout.origin.Y );
     }
 
     static FFractionalHex PixelToHex( FLayout layout, FPoint p )
@@ -138,8 +139,57 @@ public:
         }
         return corners;
     }
+
+    FHex HexRound( FFractionalHex h )
+    {
+        int q = int( round( h.q ) );
+        int r = int( round( h.r ) );
+        int s = int( round( h.s ) );
+        double q_diff = abs( q - h.q );
+        double r_diff = abs( r - h.r );
+        double s_diff = abs( s - h.s );
+        if ( q_diff > r_diff && q_diff > s_diff )
+        {
+            q = -r - s;
+        }
+        else if ( r_diff > s_diff )
+        {
+            r = -q - s;
+        }
+        else
+        {
+            s = -q - r;
+        }
+        return FHex( q, r, s );
+    }
+
+    static void GenerateHexMap( TSet<FHex>& outHexMap, int mapRadius)
+    {
+        for ( int q = -mapRadius; q <= mapRadius; q++ )
+        {
+            int r1 = FMath::Max( -mapRadius, -q - mapRadius );
+            int r2 = FMath::Min( mapRadius, -q + mapRadius );
+            for ( int r = r1; r <= r2; r++ )
+            {
+                outHexMap.Add( FHex( q, r, -q - r ) );
+            }
+        }
+    }
 };
 
 bool operator == ( const FHexModel::FHex& a, const FHexModel::FHex& b );
 
 bool operator != ( const FHexModel::FHex& a, const FHexModel::FHex& b );
+
+#if UE_BUILD_DEBUG
+uint32 GetTypeHash( const FHexModel::FHex& hex );
+#else // optimize by inlining in shipping and development builds
+FORCEINLINE uint32 GetTypeHash( const FHexModel::FHex& hex )
+{
+    uint32 hashQ = GetTypeHash( hex.q );
+    uint32 hashR = GetTypeHash( hex.r );
+    uint32 result = HashCombine( hashQ, hashR );
+
+    return result;
+}
+#endif

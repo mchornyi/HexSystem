@@ -20,3 +20,14 @@ bool operator != ( const FHexModel::FHex& a, const FHexModel::FHex& b )
 {
     return !( a == b );
 }
+
+#if UE_BUILD_DEBUG
+uint32 GetTypeHash( const FHexModel::FHex& hex )
+{
+    uint32 hashQ = GetTypeHash( hex.q );
+    uint32 hashR = GetTypeHash( hex.r );
+    uint32 result = HashCombine( hashQ, hashR );
+
+    return result;
+}
+#endif

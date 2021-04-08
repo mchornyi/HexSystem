@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "HexModel.h"
 #include "HexWorld.generated.h"
 
 UCLASS()
@@ -42,5 +43,11 @@ protected:
 private:
     void Generate( );
 
+#ifdef WITH_EDITOR
     virtual bool ShouldTickIfViewportsOnly( ) const override;
+#endif
+
+private:
+    TSet<FHexModel::FHex> HexMap;
+    //FHexModel::FLayout HexLayout;
 };
