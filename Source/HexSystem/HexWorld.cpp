@@ -11,9 +11,11 @@ DEFINE_LOG_CATEGORY( LogTrace );
 
 namespace
 {
-	void DrawDebugHex( UWorld* inWorld, const FHexModel::FLayout& layout, const FHexModel::FHex& hex, float posZ, bool isActorInside );
+	void DrawDebugHex( UWorld* inWorld, const FHexModel::FLayout& layout, const FHexModel::FHex& hex, float posZ, bool isActorInside, bool isHexVisible );
 	void DrawCharacterPos( UWorld* inWorld );
 
+	static TAutoConsoleVariable<int> CVar_HexRingsNum( TEXT( "hex.HexRingsNum" ), 6, TEXT( "Defines the number of hex rings." ), ECVF_Default );
+	static TAutoConsoleVariable<int> CVar_HexDistVisibility( TEXT( "hex.HexDistVisibility" ), 3, TEXT( "Defines the distance of hex visibility in a context of hex model." ), ECVF_Default );
     static TAutoConsoleVariable<float> CVar_HexSize( TEXT( "hex.HexSize" ), 100.0f, TEXT( "Defines the size of hex cell." ), ECVF_Default);
 	static TAutoConsoleVariable<float> CVar_LineThickness( TEXT( "hex.LineThickness" ), 10.0f, TEXT( "Defines the hex line thickness for debug visualizing." ), ECVF_Default );
 }
@@ -21,11 +23,30 @@ namespace
 // Sets default values
 AHexWorld::AHexWorld() :
 	HexLayout(FHexModel::LayoutPointy, FHexModel::FSize( 100, 100 ), FHexModel::FOrigin( 0, 0 ) )
+	, HexRingsNum(6)
+	, HexDistVisibility( 3 )
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-    CVar_HexSize.AsVariable( )->SetOnChangedCallback( FConsoleVariableDelegate::CreateLambda( [ this ]( IConsoleVariable* Variable ){ UpdateHexLayout(); } ) );
+    CVar_HexSize.AsVariable( )->SetOnChangedCallback( FConsoleVariableDelegate::CreateLambda( [ this ]( IConsoleVariable* Variable )
+	{
+		UE_LOG( LogTrace, Display, TEXT( __FUNCTION__ ) );
+		HexLayout.size = { CVar_HexSize.GetValueOnGameThread( ) , CVar_HexSize.GetValueOnGameThread( ) };
+	} ) );
+
+	CVar_HexRingsNum.AsVariable( )->SetOnChangedCallback( FConsoleVariableDelegate::CreateLambda( [ this ]( IConsoleVariable* Variable )
+	{
+		UE_LOG( LogTrace, Display, TEXT( __FUNCTION__ ) );
+		HexRingsNum = CVar_HexRingsNum.GetValueOnGameThread( );
+		Generate( );
+	} ) );
+
+	CVar_HexDistVisibility.AsVariable( )->SetOnChangedCallback( FConsoleVariableDelegate::CreateLambda( [ this ]( IConsoleVariable* Variable )
+    {
+		UE_LOG( LogTrace, Display, TEXT( __FUNCTION__ ) );
+        HexDistVisibility = CVar_HexDistVisibility.GetValueOnGameThread( );
+    } ) );
 
 	Generate( );
 }
@@ -39,6 +60,7 @@ void AHexWorld::BeginPlay()
 
 void AHexWorld::PostEditChangeProperty( struct FPropertyChangedEvent& PropertyChangedEvent )
 {
+	UE_LOG( LogTrace, Display, TEXT( __FUNCTION__ ) );
 	Generate( );
 }
 
@@ -46,7 +68,12 @@ void AHexWorld::Generate( )
 {
 	UE_LOG( LogTrace, Display, TEXT( __FUNCTION__ ) );
 
-	FHexModel::GenerateHexMap( HexMap, 3 );
+	if ( HexRingsNum == HexMap.Num( ) )
+	{
+		return;
+	}
+
+	FHexModel::GenerateHexMap( HexMap, HexRingsNum );
 }
 
 // Called every frame
@@ -64,11 +91,14 @@ void AHexWorld::Tick(float DeltaTime)
         currentHex = FHexModel::HexRound( fHex );
 	}
 
+	//const bool isActorInsideHexMap = HexMap.Contains( currentHex );
+
 	for ( const auto& hex : HexMap )
 	{
         const bool isActorInside = (hex == currentHex);
+		const bool isHexVisible = FHexModel::HexDistance( hex, currentHex ) <= HexDistVisibility;
 
-        DrawDebugHex( GetWorld( ), HexLayout, hex, actorLoc.Z, isActorInside );
+        DrawDebugHex( GetWorld( ), HexLayout, hex, actorLoc.Z, isActorInside, isHexVisible );
 	}
 
 	DrawCharacterPos( GetWorld( ) );
@@ -82,10 +112,11 @@ bool AHexWorld::ShouldTickIfViewportsOnly( ) const
 #endif
 
 
-void AHexWorld::UpdateHexLayout( )
-{
-    HexLayout.size = { CVar_HexSize.GetValueOnGameThread( ) , CVar_HexSize.GetValueOnGameThread( ) };
-}
+//void AHexWorld::UpdateHexParams( )
+//{
+//	UE_LOG( LogTrace, Display, TEXT( __FUNCTION__ ) );
+//    HexLayout.size = { CVar_HexSize.GetValueOnGameThread( ) , CVar_HexSize.GetValueOnGameThread( ) };
+//}
 
 //void AHexWorld::OnChangeCVar( IConsoleVariable* var )
 //{
@@ -94,15 +125,23 @@ void AHexWorld::UpdateHexLayout( )
 
 namespace
 {
-	void DrawDebugHex( UWorld* inWorld, const FHexModel::FLayout& layout, const FHexModel::FHex& hex, float posZ, bool isActorInside )
+	void DrawDebugHex( UWorld* inWorld, const FHexModel::FLayout& layout, const FHexModel::FHex& hex, float posZ, bool isActorInside, bool isHexVisible )
 	{
 		check( inWorld );
+
+		check( isHexVisible || !isActorInside );
 
 		const TArray<FHexModel::FPoint> corners = FHexModel::PolygonCorners(layout, hex);
 
 		posZ += isActorInside ? 3.0f : 0.0f;
 
-		const FColor Color = isActorInside ? FColor( 0, 255, 0 ) : FColor( 255, 0, 0 );
+		FColor Color = isActorInside ? FColor( 0, 255, 0 ) : FColor( 255, 0, 0 );
+		if ( !isHexVisible )
+		{
+			Color = FColor( 155, 158, 163 );
+			posZ += 3.0f;
+		}
+
 		static bool bPersistentLines = false;
 		static float LifeTime = 0.0f;
 		static uint8 DepthPriority = 0;

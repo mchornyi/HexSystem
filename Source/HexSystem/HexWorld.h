@@ -46,10 +46,12 @@ private:
 #ifdef WITH_EDITOR
     virtual bool ShouldTickIfViewportsOnly( ) const override;
 #endif
-    void UpdateHexLayout( );
+    //void UpdateHexParams( );
     //void OnChangeCVar( IConsoleVariable* var );
 
 private:
     TSet<FHexModel::FHex> HexMap;
     FHexModel::FLayout HexLayout;
+    uint8 HexRingsNum;
+    uint8 HexDistVisibility;
 };
