@@ -21,7 +21,7 @@ public:
             check( abs( q + r + s ) <= FLT_EPSILON );
         }
 
-        const T q, r, s;
+        T q, r, s;
     };
 
     typedef THex<int> FHex;
@@ -93,11 +93,15 @@ public:
 
     struct FLayout
     {
-        const FOrientation orientation;
-        const FSize size;
-        const FOrigin origin;
+        FOrientation orientation;
+        FSize size;
+        FOrigin origin;
         FLayout( const FOrientation orientation_, const FSize size_, const FOrigin origin_ )
             : orientation( orientation_ ), size( size_ ), origin( origin_ )
+        {
+        }
+
+        FLayout( ) : orientation( LayoutPointy ), size( 100, 100 ), origin( 0.0f, 0.0f )
         {
         }
     };
