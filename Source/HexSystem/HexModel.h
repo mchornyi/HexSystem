@@ -12,13 +12,13 @@ public:
         // Cube storage, cube constructor
         THex( T q_, T r_, T s_ ) : q( q_ ), r( r_ ), s( s_ )
         {
-            check( q + r + s == 0 );
+            check( abs(q + r + s) <= FLT_EPSILON );
         }
 
         // Cube storage, axial constructor
         THex( T q_, T r_ ) : q( q_ ), r( r_ ), s( -q_ - r_ )
         {
-            check( q + r + s == 0 );
+            check( abs( q + r + s ) <= FLT_EPSILON );
         }
 
         const T q, r, s;
@@ -96,7 +96,7 @@ public:
         const FOrientation orientation;
         const FSize size;
         const FOrigin origin;
-        FLayout( FOrientation orientation_, FSize size_, FOrigin origin_ )
+        FLayout( const FOrientation orientation_, const FSize size_, const FOrigin origin_ )
             : orientation( orientation_ ), size( size_ ), origin( origin_ )
         {
         }
@@ -140,7 +140,7 @@ public:
         return corners;
     }
 
-    FHex HexRound( FFractionalHex h )
+    static FHex HexRound( FFractionalHex h )
     {
         int q = int( round( h.q ) );
         int r = int( round( h.r ) );
@@ -178,8 +178,9 @@ public:
 };
 
 bool operator == ( const FHexModel::FHex& a, const FHexModel::FHex& b );
-
 bool operator != ( const FHexModel::FHex& a, const FHexModel::FHex& b );
+bool operator == ( const FHexModel::FFractionalHex& a, const FHexModel::FFractionalHex& b );
+bool operator != ( const FHexModel::FFractionalHex& a, const FHexModel::FFractionalHex& b );
 
 #if UE_BUILD_DEBUG
 uint32 GetTypeHash( const FHexModel::FHex& hex );
