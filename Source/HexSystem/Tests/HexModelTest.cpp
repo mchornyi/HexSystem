@@ -77,36 +77,6 @@ bool FHexModelTest::RunTest( const FString& Parameters )
     }
 
     {
-        const FHexModel::FHex a( 0, 3, -3 );
-        const FHexModel::FLayout layout( FHexModel::LayoutPointy, { 11,10 }, {4,5} );
-        FHexModel::FPoint result = FHexModel::HexToPixel( layout, a );
-        TestEqual( TEXT( "HexToPixel" ), result, { -1, 4 } );
-    }
-
-    {
-        const FHexModel::FLayout layout( FHexModel::LayoutPointy, { 11,10 }, { 4,5 } );
-        FHexModel::FFractionalHex result = FHexModel::PixelToHex( layout, { 3, 4 } );
-        proxy.TestEqual( TEXT( "PixelToHex" ), result, { -1, 4 } );
-    }
-
-    {
-        const FHexModel::FLayout layout( FHexModel::LayoutPointy, { 11,10 }, { 4,5 } );
-        FHexModel::FPoint result = FHexModel::HexCornerOffset( layout, 3 );
-        TestEqual( TEXT( "HexCornerOffset" ), result, { -1, 4 } );
-    }
-
-    {
-        const FHexModel::FLayout layout( FHexModel::LayoutPointy, { 11,10 }, { 4,5 } );
-        TArray<FHexModel::FPoint> result = FHexModel::PolygonCorners( layout, { 4, -4, 0 } );
-        TestEqual( TEXT( "PolygonCorners" ), result, { { -1, 4 }, { -1, 4 }, { -1, 4 }, { -1, 4 }, { -1, 4 }, { -1, 4 } } );
-    }
-
-    {
-        FHexModel::FHex result = FHexModel::HexRound( { 4.5, -4.6, 0.1 } );
-        proxy.TestEqual( TEXT( "HexRound" ), result, { -1, 4, -3 } );
-    }
-
-    {
         TSet<FHexModel::FHex> hexMapActual;
         TSet<FHexModel::FHex> hexMapExpected;
         TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { 0, 0, 0 } ).IsValidId(), true );
@@ -138,6 +108,33 @@ bool FHexModelTest::RunTest( const FString& Parameters )
             TestEqual( TEXT( "GenerateHexMap: Test Content" ), hexMapExpected.Contains( hex ), true );
         }
     }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Test Layout
+    const FHexModel::FLayout hexLayout( FHexModel::LayoutPointy, FHexModel::FSize( 100, 100 ), FHexModel::FOrigin( -1050, -40 ) );
+    {
+        const FHexModel::FHex a( 0, 3, -3 );
+        FHexModel::FPoint result = FHexModel::HexToPixel( hexLayout, a );
+        TestEqual( TEXT( "HexToPixel" ), result, {-790.192383f, 410.0f } );
+    }
+
+    {
+        FHexModel::FPoint result = FHexModel::HexCornerOffset( hexLayout, 3 );
+        TestEqual( TEXT( "HexCornerOffset" ), result, { -86.6025391f, -50.0000076f } );
+    }
+
+    {
+        const FHexModel::FFractionalHex fHex = FHexModel::PixelToHex( hexLayout, { -1047.03284f, 288.912903f } );
+        const FHexModel::FHex hex = FHexModel::HexRound( fHex );
+        proxy.TestEqual( TEXT( "PixelToHex/HexRound" ), hex, { -1, 2, -1 } );
+    }
+
+    {
+        TArray<FHexModel::FPoint> result = FHexModel::PolygonCorners( hexLayout, { 4, -4, 0 } );
+        TestEqual( TEXT( "PolygonCorners" ), result, { { -616.987305f, -590.0 }, { -703.589844f, -540.0f }, { -790.192383f, -590.0f }, { -790.192383f, -690.0f }, { -703.589844f, -740.0f }, { -616.987305f, -690.0f } } );
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     return true;
 }
