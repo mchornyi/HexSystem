@@ -1,10 +1,10 @@
 #include "HexModel.h"
 
 const FHexModel::FOrientation FHexModel::LayoutPointy
-= FHexModel::FOrientation( sqrt( 3.0 ), sqrt( 3.0 ) / 2.0, 0.0, 3.0 / 2.0, sqrt( 3.0 ) / 3.0, -1.0 / 3.0, 0.0, 2.0 / 3.0, 0.5 );
+= FHexModel::FOrientation( sqrt( 3.0f ), sqrt( 3.0f ) / 2.0f, 0.0f, 3.0f / 2.0f, sqrt( 3.0f ) / 3.0f, -1.0f / 3.0f, 0.0f, 2.0f / 3.0f, 0.5f );
 
 const FHexModel::FOrientation FHexModel::LayoutFlat
-= FHexModel::FOrientation( 3.0 / 2.0, 0.0, sqrt( 3.0 ) / 2.0, sqrt( 3.0 ), 2.0 / 3.0, 0.0, -1.0 / 3.0, sqrt( 3.0 ) / 3.0, 0.0 );
+= FHexModel::FOrientation( 3.0f / 2.0f, 0.0f, sqrt( 3.0f ) / 2.0f, sqrt( 3.0f ), 2.0f / 3.0f, 0.0f, -1.0f / 3.0f, sqrt( 3.0f ) / 3.0f, 0.0f);
 
 const TArray<FHexModel::FHex> FHexModel::HexDirections = {
         FHex( 1, -1, 0 ), FHex( 1, 0, -1 ), FHex( 0, 1, -1 ),

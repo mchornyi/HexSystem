@@ -25,7 +25,7 @@ public:
     };
 
     typedef THex<int> FHex;
-    typedef THex<double> FFractionalHex;
+    typedef THex<float> FFractionalHex;
 
     static FHex HexAdd( FHex a, FHex b )
     {
@@ -70,12 +70,12 @@ public:
 
     struct FOrientation
     {
-        const double f0, f1, f2, f3;
-        const double b0, b1, b2, b3;
-        const double start_angle; // in multiples of 60°
-        FOrientation( double f0_, double f1_, double f2_, double f3_,
-                      double b0_, double b1_, double b2_, double b3_,
-                      double start_angle_ )
+        const float f0, f1, f2, f3;
+        const float b0, b1, b2, b3;
+        const float start_angle; // in multiples of 60°
+        FOrientation( float f0_, float f1_, float f2_, float f3_,
+                      float b0_, float b1_, float b2_, float b3_,
+                      float start_angle_ )
             : f0( f0_ ), f1( f1_ ), f2( f2_ ), f3( f3_ ),
             b0( b0_ ), b1( b1_ ), b2( b2_ ), b3( b3_ ),
             start_angle( start_angle_ )
@@ -111,8 +111,8 @@ public:
     static FPoint HexToPixel( FLayout layout, FHex h )
     {
         const FOrientation& M = layout.orientation;
-        double x = ( M.f0 * h.q + M.f1 * h.r ) * layout.size.X;
-        double y = ( M.f2 * h.q + M.f3 * h.r ) * layout.size.Y;
+        float x = ( M.f0 * h.q + M.f1 * h.r ) * layout.size.X;
+        float y = ( M.f2 * h.q + M.f3 * h.r ) * layout.size.Y;
         return FPoint( x + layout.origin.X, y + layout.origin.Y );
     }
 
@@ -120,15 +120,15 @@ public:
     {
         const FOrientation& M = layout.orientation;
         FPoint pt = FPoint( ( p.X - layout.origin.X ) / layout.size.X, ( p.Y - layout.origin.Y ) / layout.size.Y );
-        double q = M.b0 * pt.X + M.b1 * pt.Y;
-        double r = M.b2 * pt.X + M.b3 * pt.Y;
+        float q = M.b0 * pt.X + M.b1 * pt.Y;
+        float r = M.b2 * pt.X + M.b3 * pt.Y;
         return FFractionalHex( q, r, -q - r );
     }
 
     static FPoint HexCornerOffset( FLayout layout, int corner )
     {
         FPoint size = layout.size;
-        double angle = 2.0 * PI * ( layout.orientation.start_angle + corner ) / 6;
+        float angle = 2.0 * PI * ( layout.orientation.start_angle + corner ) / 6;
         return FPoint( size.X * cos( angle ), size.Y * sin( angle ) );
     }
 
@@ -149,9 +149,9 @@ public:
         int q = int( round( h.q ) );
         int r = int( round( h.r ) );
         int s = int( round( h.s ) );
-        double q_diff = abs( q - h.q );
-        double r_diff = abs( r - h.r );
-        double s_diff = abs( s - h.s );
+        float q_diff = abs( q - h.q );
+        float r_diff = abs( r - h.r );
+        float s_diff = abs( s - h.s );
         if ( q_diff > r_diff && q_diff > s_diff )
         {
             q = -r - s;
@@ -169,6 +169,7 @@ public:
 
     static void GenerateHexMap( TSet<FHex>& outHexMap, int mapRadius)
     {
+        outHexMap.Reset( );
         for ( int q = -mapRadius; q <= mapRadius; q++ )
         {
             int r1 = FMath::Max( -mapRadius, -q - mapRadius );

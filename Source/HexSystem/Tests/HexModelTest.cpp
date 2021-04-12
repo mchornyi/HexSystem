@@ -32,6 +32,7 @@ bool FHexModelTest::RunTest( const FString& Parameters )
 {
     const AutomationTestProxy proxy{this};
 
+    // Test: HexAdd
     {
         const FHexModel::FHex a( 1, -1, 0 );
         const FHexModel::FHex b( -3, 2, 1 );
@@ -39,6 +40,7 @@ bool FHexModelTest::RunTest( const FString& Parameters )
         proxy.TestEqual( TEXT( "HexAdd" ), result, { -2, 1, 1 } );
     }
 
+    // Test: HexSubtract
     {
         const FHexModel::FHex a( 1, -1, 0 );
         const FHexModel::FHex b( -3, 2, 1 );
@@ -46,18 +48,21 @@ bool FHexModelTest::RunTest( const FString& Parameters )
         proxy.TestEqual( TEXT( "HexSubtract" ), result, { 4, -3, -1 } );
     }
 
+    // Test: HexMultiply
     {
         const FHexModel::FHex a( 1, -1, 0 );
         const FHexModel::FHex result = FHexModel::HexMultiply( a, 2 );
         proxy.TestEqual( TEXT( "HexMultiply" ), result, { 2, -2, 0 } );
     }
 
+    // Test: HexLength
     {
         const FHexModel::FHex a( -3, 4, -1 );
         const int result = FHexModel::HexLength( a );
         TestEqual( TEXT( "HexLength" ), result, 4 );
     }
 
+    // Test: HexDistance
     {
         const FHexModel::FHex a( -3, 4, -1 );
         const FHexModel::FHex b( 4, -3, -1 );
@@ -65,17 +70,29 @@ bool FHexModelTest::RunTest( const FString& Parameters )
         TestEqual( TEXT( "HexDistance" ), result, 7 );
     }
 
+    // Test: HexDirection
     {
         const FHexModel::FHex result = FHexModel::HexDirection( 3 );
         proxy.TestEqual( TEXT( "HexDirection" ), result, { -1, 1, 0 } );
     }
 
+    // Test: HexNeighbor
     {
         const FHexModel::FHex a( 2, -3, 1 );
         const FHexModel::FHex result = FHexModel::HexNeighbor( a, 4 );
         proxy.TestEqual( TEXT( "HexNeighbor" ), result, { 1, -3, 2 } );
     }
 
+    // Test: GenerateHexMap: Size after generation
+    {
+        TSet<FHexModel::FHex> hexMapActual;
+        FHexModel::GenerateHexMap( hexMapActual, 3 );
+        TestEqual( TEXT( "GenerateHexMap: Size after generation" ), hexMapActual.Num( ), 37 );
+        FHexModel::GenerateHexMap( hexMapActual, 2 );
+        TestEqual( TEXT( "GenerateHexMap: Size after generation" ), hexMapActual.Num( ), 19 );
+    }
+
+    // Test: GenerateHexMap: Test Size
     {
         TSet<FHexModel::FHex> hexMapActual;
         TSet<FHexModel::FHex> hexMapExpected;
@@ -112,23 +129,28 @@ bool FHexModelTest::RunTest( const FString& Parameters )
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Test Layout
     const FHexModel::FLayout hexLayout( FHexModel::LayoutPointy, FHexModel::FSize( 100, 100 ), FHexModel::FOrigin( -1050, -40 ) );
+
+    // Test: HexToPixel
     {
         const FHexModel::FHex a( 0, 3, -3 );
         FHexModel::FPoint result = FHexModel::HexToPixel( hexLayout, a );
         TestEqual( TEXT( "HexToPixel" ), result, {-790.192383f, 410.0f } );
     }
 
+    // Test: HexCornerOffset
     {
         FHexModel::FPoint result = FHexModel::HexCornerOffset( hexLayout, 3 );
-        TestEqual( TEXT( "HexCornerOffset" ), result, { -86.6025391f, -50.0000076f } );
+        TestEqual( TEXT( "HexCornerOffset" ), FVector( result, 0.0f ), FVector( { -86.6025f, -50.0f }, 0.0f ), 0.0001f );
     }
 
+    // Test: PixelToHex/HexRound
     {
         const FHexModel::FFractionalHex fHex = FHexModel::PixelToHex( hexLayout, { -1047.03284f, 288.912903f } );
         const FHexModel::FHex hex = FHexModel::HexRound( fHex );
         proxy.TestEqual( TEXT( "PixelToHex/HexRound" ), hex, { -1, 2, -1 } );
     }
 
+    // Test: PolygonCorners
     {
         TArray<FHexModel::FPoint> result = FHexModel::PolygonCorners( hexLayout, { 4, -4, 0 } );
         TestEqual( TEXT( "PolygonCorners" ), result, { { -616.987305f, -590.0 }, { -703.589844f, -540.0f }, { -790.192383f, -590.0f }, { -790.192383f, -690.0f }, { -703.589844f, -740.0f }, { -616.987305f, -690.0f } } );
