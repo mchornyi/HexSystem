@@ -25,19 +25,6 @@ protected:
 
 #if WITH_EDITORONLY_DATA
     virtual void PostEditChangeProperty( struct FPropertyChangedEvent& PropertyChangedEvent ) override;
-
-    /** Delegate called when a property changes */
-    DECLARE_MULTICAST_DELEGATE_OneParam( FOnPropertyChanged, AHexWorld& );
-
-protected:
-
-    UPROPERTY( EditInstanceOnly, Category = "HexWorldParams",  Meta = ( ClampMin = "1", ClampMax = "50" ) )
-    int32 RingsCount = 1;
-
-    //UPROPERTY( EditInstanceOnly )
-    //TArray<FGeneratedRing> Rings;
-
-    FOnPropertyChanged OnPropertyChanged;
 #endif
 
 private:
@@ -49,9 +36,20 @@ private:
     //void UpdateHexParams( );
     //void OnChangeCVar( IConsoleVariable* var );
 
-private:
-    TSet<FHexModel::FHex> HexMap;
-    FHexModel::FLayout HexLayout;
+public:
+    UPROPERTY( EditInstanceOnly, Category = "HexWorldParams", Meta = ( ClampMin = "1", ClampMax = "100" ) )
+    FHexLayout HexLayout;
+
+    UPROPERTY( EditInstanceOnly, Category = "HexWorldParams", Meta = ( ClampMin = "1", ClampMax = "100" ) )
     uint8 HexRingsNum;
+
+    UPROPERTY( EditInstanceOnly, Category = "HexWorldParams", Meta = ( ClampMin = "0", ClampMax = "1000000" ) )
     uint8 HexDistVisibility;
+
+    UPROPERTY( EditInstanceOnly, Category = "HexWorldParams" )
+    bool bHexGenerateTrigger;
+
+private:
+    UPROPERTY( EditInstanceOnly, Category = "HexWorldParams" )
+    TSet<FHex> HexMap;
 };

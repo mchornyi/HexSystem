@@ -6,8 +6,7 @@
 #include "GameFramework/Character.h"
 #include "Components/CapsuleComponent.h"
 
-DECLARE_LOG_CATEGORY_EXTERN( LogTrace, Log, All );
-//DEFINE_LOG_CATEGORY( LogTrace );
+DECLARE_LOG_CATEGORY_EXTERN( HexTrace, Log, All );
 
 namespace
 {
@@ -54,7 +53,7 @@ void AHexLevelStreamerActor::BeginPlay()
 
 void AHexLevelStreamerActor::OverlapBegins( UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult )
 {
-    UE_LOG( LogTrace, Display, TEXT( __FUNCTION__ ) );
+    UE_LOG( HexTrace, Display, TEXT( __FUNCTION__ ) );
     ACharacter* MyCharacter = UGameplayStatics::GetPlayerCharacter( this, 0 );
 
     if ( OtherActor == Cast<AActor>(MyCharacter) && LevelToLoad != "" )
@@ -66,7 +65,7 @@ void AHexLevelStreamerActor::OverlapBegins( UPrimitiveComponent* OverlappedCompo
 
 void AHexLevelStreamerActor::OverlapEnds( UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex )
 {
-    UE_LOG( LogTrace, Display, TEXT( __FUNCTION__ ) );
+    UE_LOG( HexTrace, Display, TEXT( __FUNCTION__ ) );
     return;
     /*ACharacter* MyCharacter = UGameplayStatics::GetPlayerCharacter( this, 0 );
     if ( OtherActor == MyCharacter && LevelToLoad != "" )
