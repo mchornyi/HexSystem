@@ -33,8 +33,7 @@ private:
 #ifdef WITH_EDITOR
     virtual bool ShouldTickIfViewportsOnly( ) const override;
 #endif
-    //void UpdateHexParams( );
-    //void OnChangeCVar( IConsoleVariable* var );
+    void DebugGenerateRepActors( );
 
 public:
     UPROPERTY( EditInstanceOnly, Category = "HexWorldParams", Meta = ( ClampMin = "1", ClampMax = "100" ) )

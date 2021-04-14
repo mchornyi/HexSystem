@@ -5,6 +5,7 @@
 #include "DrawDebugHelpers.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
+#include "HexReplicatorDebugActor.h"
 
 DECLARE_LOG_CATEGORY_EXTERN( HexTrace, Log, All );
 DEFINE_LOG_CATEGORY( HexTrace );
@@ -121,6 +122,12 @@ void AHexWorld::Tick(float DeltaTime)
 	}
 
 	DrawCharacterPos( GetWorld( ) );
+
+	// This is placed here because Engine calls obj construction twice even though there is only one copy.
+    static FAutoConsoleCommand CCmdRenderDocCaptureFrame = FAutoConsoleCommand(
+        TEXT( "hex.DebugGenerateRepActors" ),
+        TEXT( "Generates a lot of HexReplicatorDebugActor to test CPU performance for network." ),
+        FConsoleCommandDelegate::CreateLambda( [ this ]( ) { DebugGenerateRepActors( ); } ) );
 }
 
 #ifdef WITH_EDITOR
@@ -131,16 +138,23 @@ bool AHexWorld::ShouldTickIfViewportsOnly( ) const
 #endif
 
 
-//void AHexWorld::UpdateHexParams( )
-//{
-//	UE_LOG( LogTrace, Display, TEXT( __FUNCTION__ ) );
-//    HexLayout.size = { CVar_HexSize.GetValueOnGameThread( ) , CVar_HexSize.GetValueOnGameThread( ) };
-//}
+void AHexWorld::DebugGenerateRepActors( )
+{
+	UE_LOG( HexTrace, Display, TEXT( __FUNCTION__ ) );
 
-//void AHexWorld::OnChangeCVar( IConsoleVariable* var )
-//{
-//
-//}
+    for ( const auto& hex : HexMap )
+    {
+        FVector spawnLocation( hexsystem::FHexModel::HexToPixel( HexLayout, hex ), 0.0f );
+        FRotator spawnRotation( 0.0f, 0.0f, 0.0f );
+
+        FActorSpawnParameters spawnParameters;
+        spawnParameters.Instigator = GetInstigator( );
+        spawnParameters.Owner = this;
+
+        AHexReplicatorDebugActor* spawnedActor = GetWorld( )->SpawnActor<AHexReplicatorDebugActor>( spawnLocation, spawnRotation, spawnParameters );
+		//TODO Save somewhere to delete
+    }
+}
 
 namespace
 {
