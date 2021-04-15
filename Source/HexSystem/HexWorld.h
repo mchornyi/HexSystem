@@ -28,12 +28,14 @@ protected:
 #endif
 
 private:
-    void Generate( );
 
 #ifdef WITH_EDITOR
+    void Generate( );
     virtual bool ShouldTickIfViewportsOnly( ) const override;
-#endif
     void DebugGenerateRepActors( );
+    // Called every frame
+    void TickInEditor( float DeltaTime );
+#endif
 
 public:
     UPROPERTY( EditInstanceOnly, Category = "HexWorldParams", Meta = ( ClampMin = "1", ClampMax = "100" ) )
