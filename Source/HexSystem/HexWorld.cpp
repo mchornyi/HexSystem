@@ -218,6 +218,9 @@ void AHexWorld::DebugGenerateRepActors( )
 {
     UE_LOG( HexTrace, Display, TEXT( __FUNCTION__ ) );
 
+    for ( TObjectIterator<AHexReplicatorDebugActor> itr; itr; ++itr )
+        ( *itr )->Destroy( );
+
     for ( const auto& hex : HexMap )
     {
         FVector spawnLocation( hexsystem::FHexModel::HexToPixel( HexLayout, hex ), 45.0f );
