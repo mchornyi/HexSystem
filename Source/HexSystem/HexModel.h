@@ -51,12 +51,12 @@ struct FHexLevelInfo
 {
     GENERATED_USTRUCT_BODY( )
 
-    FHexLevelInfo( )
+        FHexLevelInfo( )
     {
     }
 
     UPROPERTY( EditInstanceOnly, Category = "HexLevelInfo" )
-    FName LevelName;
+        FName LevelName;
 };
 
 USTRUCT( )
@@ -64,25 +64,33 @@ struct FHex
 {
     GENERATED_USTRUCT_BODY( )
 
-    FHex( ) : q( 0 ), r( 0 ), s( 0 ){ }
+        FHex( ) : q( 0 ), r( 0 ), s( 0 )
+    {
+    }
 
     // Cube storage, cube constructor
-    FHex( int16 q_, int16 r_, int16 s_ ) : q( q_ ), r( r_ ), s( s_ ) { check( abs( q + r + s ) <= FLT_EPSILON ); }
+    FHex( int16 q_, int16 r_, int16 s_ ) : q( q_ ), r( r_ ), s( s_ )
+    {
+        check( abs( q + r + s ) <= FLT_EPSILON );
+    }
 
     // Cube storage, axial constructor
-    FHex( int16 q_, int16 r_ ) : q( q_ ), r( r_ ), s( -q_ - r_ ) { check( abs( q + r + s ) <= FLT_EPSILON ); }
-
-    UPROPERTY()
-    int16 q;
-
-    UPROPERTY( )
-    int16 r;
+    FHex( int16 q_, int16 r_ ) : q( q_ ), r( r_ ), s( -q_ - r_ )
+    {
+        check( abs( q + r + s ) <= FLT_EPSILON );
+    }
 
     UPROPERTY( )
-    int16 s;
+        int16 q;
+
+    UPROPERTY( )
+        int16 r;
+
+    UPROPERTY( )
+        int16 s;
 
     UPROPERTY( EditInstanceOnly, Category = "HexLevelInfo" )
-    FHexLevelInfo LevelInfo;
+        FHexLevelInfo LevelInfo;
 };
 
 USTRUCT( )
@@ -90,10 +98,10 @@ struct FHexLayout
 {
     GENERATED_USTRUCT_BODY( )
 
-    hexsystem::FOrientation orientation;
+        hexsystem::FOrientation orientation;
 
     UPROPERTY( EditInstanceOnly, Category = "HexWorldParams", Meta = ( ClampMin = "1", ClampMax = "100000" ) )
-    FVector2D size;
+        FVector2D size;
 
     FVector2D origin;
 
@@ -139,7 +147,7 @@ namespace hexsystem
         }
 
         // Top-Right Clock-Wise Direction
-        static FHex HexDirection( int direction /* 0 to 5 */ )
+        static FHex HexDirection( uint16 direction /* 0 to 5 */ )
         {
             check( 0 <= direction && direction < 6 );
             return HexDirections[ direction ];
@@ -150,9 +158,12 @@ namespace hexsystem
             return HexAdd( hex, HexDirection( direction ) );
         }
 
-        //////////////////////////////////////////////////////////////////////////////////////
+        static FHex HexScale( FHex a, uint16 ring )
+        {
+            return { a.q * ring, a.r * ring, a.s * ring };
+        }
 
-        //////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         static FPoint HexToPixel( FHexLayout layout, FHex h )
         {
@@ -198,28 +209,25 @@ namespace hexsystem
             float q_diff = abs( q - h.q );
             float r_diff = abs( r - h.r );
             float s_diff = abs( s - h.s );
+
             if ( q_diff > r_diff && q_diff > s_diff )
-            {
                 q = -r - s;
-            }
             else if ( r_diff > s_diff )
-            {
                 r = -q - s;
-            }
             else
-            {
                 s = -q - r;
-            }
+
             return FHex( q, r, s );
         }
 
+        // Generates hexagonal shape
         static void GenerateHexMap( TSet<FHex>& outHexMap, int mapRadius )
         {
             outHexMap.Reset( );
             for ( int q = -mapRadius; q <= mapRadius; q++ )
             {
-                int r1 = FMath::Max( -mapRadius, -q - mapRadius );
-                int r2 = FMath::Min( mapRadius, -q + mapRadius );
+                const int r1 = FMath::Max( -mapRadius, -q - mapRadius );
+                const int r2 = FMath::Min( mapRadius, -q + mapRadius );
                 for ( int r = r1; r <= r2; r++ )
                 {
                     outHexMap.Add( FHex( q, r, -q - r ) );
@@ -227,8 +235,30 @@ namespace hexsystem
             }
         }
 
-     public:
-         static const TArray<FHex> HexDirections;
+        static TArray<FHex> HexRing( FHex hexCenter, uint32 ring )
+        {
+            TArray<FHex> result;
+            result.AddUnique( hexCenter );
+
+            if ( ring == 0 )
+                return result;
+
+            FHex hex = HexAdd( hexCenter, HexScale( HexDirection( 4 ), ring ) );
+
+            for(uint16 i = 0; i < 6; ++i)
+            {
+                for ( uint16 r = 0; r < ring; ++r )
+                {
+                    result.AddUnique( hex );
+                    hex = HexNeighbor( hex, i );
+                }
+            }
+
+            return result;
+        }
+
+    public:
+        static const TArray<FHex> HexDirections;
     };
 };
 
@@ -238,14 +268,14 @@ bool operator == ( const hexsystem::FFractionalHex& a, const hexsystem::FFractio
 bool operator != ( const hexsystem::FFractionalHex& a, const hexsystem::FFractionalHex& b );
 
 #if UE_BUILD_DEBUG
-    uint32 GetTypeHash( const FHex& hex );
+uint32 GetTypeHash( const FHex& hex );
 #else // optimize by inlining in shipping and development builds
-    FORCEINLINE uint32 GetTypeHash( const FHex& hex )
-    {
-        uint32 hashQ = GetTypeHash( hex.q );
-        uint32 hashR = GetTypeHash( hex.r );
-        uint32 result = HashCombine( hashQ, hashR );
+FORCEINLINE uint32 GetTypeHash( const FHex& hex )
+{
+    uint32 hashQ = GetTypeHash( hex.q );
+    uint32 hashR = GetTypeHash( hex.r );
+    uint32 result = HashCombine( hashQ, hashR );
 
-        return result;
-    }
+    return result;
+}
 #endif

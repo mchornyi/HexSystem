@@ -32,7 +32,7 @@ namespace
 
 bool FHexModelTest::RunTest( const FString& Parameters )
 {
-    const AutomationTestProxy proxy{this};
+    const AutomationTestProxy proxy{ this };
 
     // Test: HexAdd
     {
@@ -40,6 +40,13 @@ bool FHexModelTest::RunTest( const FString& Parameters )
         const FHex b( -3, 2, 1 );
         const FHex result = FHexModel::HexAdd( a, b );
         proxy.TestEqual( TEXT( "HexAdd" ), result, { -2, 1, 1 } );
+    }
+
+    // Test: HexAdd/HexScale
+    {
+        const FHex a( -4, 1, 3 );
+        const FHex result = FHexModel::HexAdd( a, FHexModel::HexScale( FHexModel::HexDirection( 2 ), 3 ) );
+        proxy.TestEqual( TEXT( "HexAdd/HexScale" ), result, { -4, 4, 0 } );
     }
 
     // Test: HexSubtract
@@ -98,29 +105,29 @@ bool FHexModelTest::RunTest( const FString& Parameters )
     {
         TSet<FHex> hexMapActual;
         TSet<FHex> hexMapExpected;
-        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { 0, 0, 0 } ).IsValidId(), true );
-        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { 1, -1, 0 } ).IsValidId(), true );
-        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { 1, 0, -1 } ).IsValidId(), true );
-        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { 0, 1, -1 } ).IsValidId(), true );
-        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { -1, 1, 0 } ).IsValidId(), true );
-        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { -1, 0, 1 } ).IsValidId(), true );
-        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { 0, -1, 1 } ).IsValidId(), true );
-        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { 1, -2, 1 } ).IsValidId(), true );
-        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { 2, -2, 0 } ).IsValidId(), true );
+        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { 0, 0, 0 } ).IsValidId( ), true );
+        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { 1, -1, 0 } ).IsValidId( ), true );
+        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { 1, 0, -1 } ).IsValidId( ), true );
+        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { 0, 1, -1 } ).IsValidId( ), true );
+        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { -1, 1, 0 } ).IsValidId( ), true );
+        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { -1, 0, 1 } ).IsValidId( ), true );
+        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { 0, -1, 1 } ).IsValidId( ), true );
+        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { 1, -2, 1 } ).IsValidId( ), true );
+        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { 2, -2, 0 } ).IsValidId( ), true );
         TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { 2, -1, -1 } ).IsValidId( ), true );
-        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { 2, 0, -2 } ).IsValidId(), true );
-        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { 1, 1, -2 } ).IsValidId(), true );
-        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { 0, 2, -2 } ).IsValidId(), true );
+        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { 2, 0, -2 } ).IsValidId( ), true );
+        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { 1, 1, -2 } ).IsValidId( ), true );
+        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { 0, 2, -2 } ).IsValidId( ), true );
         TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { -1, 2, -1 } ).IsValidId( ), true );
-        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { -2, 2, 0 } ).IsValidId(), true );
-        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { -2, 1, 1 } ).IsValidId(), true );
-        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { -2, 0, 2 } ).IsValidId(), true );
+        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { -2, 2, 0 } ).IsValidId( ), true );
+        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { -2, 1, 1 } ).IsValidId( ), true );
+        TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { -2, 0, 2 } ).IsValidId( ), true );
         TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { -1, -1, 2 } ).IsValidId( ), true );
         TestEqual( TEXT( "GenerateHexMap: Add to container" ), hexMapExpected.Add( { 0, -2, 2 } ).IsValidId( ), true );
 
         FHexModel::GenerateHexMap( hexMapActual, 2 );
 
-        TestEqual( TEXT( "GenerateHexMap: Test Size" ), hexMapActual.Num(), hexMapExpected.Num( ) );
+        TestEqual( TEXT( "GenerateHexMap: Test Size" ), hexMapActual.Num( ), hexMapExpected.Num( ) );
 
         for ( const auto& hex : hexMapActual )
         {
@@ -136,7 +143,7 @@ bool FHexModelTest::RunTest( const FString& Parameters )
     {
         const FHex a( 0, 3, -3 );
         FPoint result = FHexModel::HexToPixel( hexLayout, a );
-        TestEqual( TEXT( "HexToPixel" ), result, {-790.192383f, 410.0f } );
+        TestEqual( TEXT( "HexToPixel" ), result, { -790.192383f, 410.0f } );
     }
 
     // Test: HexCornerOffset
@@ -159,6 +166,46 @@ bool FHexModelTest::RunTest( const FString& Parameters )
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    //Test: HexRing Zero Center
+    {
+        const FHex hexCenter( -2, 2, 0 );
+        const TArray<FHex> result = FHexModel::HexRing( hexCenter, 0 );
+
+        const FHex hexArr[ ] = { {-2, 2, 0} };
+        TArray<FHex> expected( hexArr, UE_ARRAY_COUNT( hexArr ) );
+
+        TestEqual( TEXT( "HexRingZeroCenter" ), result, expected );
+    }
+
+    //Test: HexRing=1
+    {
+        const FHex hexCenter( -2, 2, 0 );
+        const TArray<FHex> result = FHexModel::HexRing( hexCenter, 1 );
+
+        // The order matters for comparison
+        const FHex hexArr[ ] = { {-2, 2, 0}, {-3, 2, 1}, {-2, 1, 1}, {-1, 1, 0}, {-1, 2, -1}, {-2, 3, -1}, {-3, 3, 0}
+        };
+
+        TArray<FHex> expected( hexArr, UE_ARRAY_COUNT( hexArr ) );
+
+        TestEqual( TEXT( "HexRing1" ), result, expected );
+    }
+
+    //Test: HexRing=2
+    {
+        const FHex hexCenter( -2, 2, 0 );
+        const TArray<FHex> result = FHexModel::HexRing( hexCenter, 2 );
+
+        // The order matters for comparison
+        const FHex hexArr[ ] = { {-2, 2, 0}, {-4, 2, 2}, {-3, 1, 2}, {-2, 0, 2}, {-1, 0, 1},
+            {0, 0, 0}, {0, 1, -1}, {0, 2, -2}, {-1, 3, -2}, {-2, 4, -2}, {-3, 4, -1}, {-4, 4, 0}, {-4, 3, 1}
+        };
+
+        TArray<FHex> expected( hexArr, UE_ARRAY_COUNT( hexArr ) );
+
+        TestEqual( TEXT( "HexRing2" ), result, expected );
+    }
 
     return true;
 }
