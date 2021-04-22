@@ -81,16 +81,16 @@ struct FHex
     }
 
     UPROPERTY( )
-        int16 q;
+    int16 q;
 
     UPROPERTY( )
-        int16 r;
+    int16 r;
 
     UPROPERTY( )
-        int16 s;
+    int16 s;
 
     UPROPERTY( EditInstanceOnly, Category = "HexLevelInfo" )
-        FHexLevelInfo LevelInfo;
+    FHexLevelInfo LevelInfo;
 };
 
 USTRUCT( )
@@ -98,10 +98,10 @@ struct FHexLayout
 {
     GENERATED_USTRUCT_BODY( )
 
-        hexsystem::FOrientation orientation;
+    hexsystem::FOrientation orientation;
 
     UPROPERTY( EditInstanceOnly, Category = "HexWorldParams", Meta = ( ClampMin = "1", ClampMax = "100000" ) )
-        FVector2D size;
+    FVector2D size;
 
     FVector2D origin;
 
@@ -115,57 +115,62 @@ struct FHexLayout
     }
 };
 
+bool operator == ( const struct FHex& a, const struct FHex& b );
+bool operator != ( const struct FHex& a, const struct FHex& b );
+bool operator == ( const hexsystem::FFractionalHex& a, const hexsystem::FFractionalHex& b );
+bool operator != ( const hexsystem::FFractionalHex& a, const hexsystem::FFractionalHex& b );
+
 namespace hexsystem
 {
     class FHexModel
     {
     public:
 
-        static FHex HexAdd( FHex a, FHex b )
+        static FHex HexAdd( const FHex a, const FHex b )
         {
             return FHex( a.q + b.q, a.r + b.r, a.s + b.s );
         }
 
-        static FHex HexSubtract( FHex a, FHex b )
+        static FHex HexSubtract( const FHex a, const FHex b )
         {
             return FHex( a.q - b.q, a.r - b.r, a.s - b.s );
         }
 
-        static FHex HexMultiply( FHex a, int k )
+        static FHex HexMultiply( const FHex a, const int k )
         {
             return FHex( a.q * k, a.r * k, a.s * k );
         }
 
-        static int HexLength( FHex hex )
+        static int HexLength( const FHex hex )
         {
             return int( ( abs( hex.q ) + abs( hex.r ) + abs( hex.s ) ) / 2 );
         }
 
-        static int HexDistance( FHex a, FHex b )
+        static int HexDistance( const FHex a, const FHex b )
         {
             return HexLength( HexSubtract( a, b ) );
         }
 
         // Top-Right Clock-Wise Direction
-        static FHex HexDirection( uint16 direction /* 0 to 5 */ )
+        static FHex HexDirection( const uint16 direction /* 0 to 5 */ )
         {
             check( 0 <= direction && direction < 6 );
             return HexDirections[ direction ];
         }
 
-        static FHex HexNeighbor( FHex hex, int direction )
+        static FHex HexNeighbor( const FHex hex, const int direction )
         {
             return HexAdd( hex, HexDirection( direction ) );
         }
 
-        static FHex HexScale( FHex a, uint16 ring )
+        static FHex HexScale( const FHex a, const uint16 ring )
         {
             return { a.q * ring, a.r * ring, a.s * ring };
         }
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        static FPoint HexToPixel( FHexLayout layout, FHex h )
+        static FPoint HexToPixel( const FHexLayout layout, const FHex h )
         {
             const FOrientation& M = layout.orientation;
             float x = ( M.f0 * h.q + M.f1 * h.r ) * layout.size.X;
@@ -173,7 +178,7 @@ namespace hexsystem
             return FPoint( x + layout.origin.X, y + layout.origin.Y );
         }
 
-        static FFractionalHex PixelToHex( FHexLayout layout, FPoint p )
+        static FFractionalHex PixelToHex( const FHexLayout layout, const FPoint p )
         {
             const FOrientation& M = layout.orientation;
             FPoint pt = FPoint( ( p.X - layout.origin.X ) / layout.size.X, ( p.Y - layout.origin.Y ) / layout.size.Y );
@@ -182,14 +187,14 @@ namespace hexsystem
             return FFractionalHex( q, r, -q - r );
         }
 
-        static FPoint HexCornerOffset( FHexLayout layout, int corner )
+        static FPoint HexCornerOffset( const FHexLayout layout, const int corner )
         {
             FPoint size = layout.size;
             float angle = 2.0 * PI * ( layout.orientation.start_angle + corner ) / 6;
             return FPoint( size.X * cos( angle ), size.Y * sin( angle ) );
         }
 
-        static TArray<FPoint> PolygonCorners( FHexLayout layout, FHex h )
+        static TArray<FPoint> PolygonCorners( const FHexLayout layout, const FHex h )
         {
             TArray<FPoint> corners = {};
             FPoint center = HexToPixel( layout, h );
@@ -201,7 +206,7 @@ namespace hexsystem
             return corners;
         }
 
-        static FHex HexRound( FFractionalHex h )
+        static FHex HexRound( const FFractionalHex h )
         {
             int q = int( round( h.q ) );
             int r = int( round( h.r ) );
@@ -235,7 +240,7 @@ namespace hexsystem
             }
         }
 
-        static TArray<FHex> HexRing( FHex hexCenter, uint32 ring )
+        static TArray<FHex> HexRing( const FHex hexCenter, const uint32 ring )
         {
             TArray<FHex> result;
             result.AddUnique( hexCenter );
@@ -257,15 +262,46 @@ namespace hexsystem
             return result;
         }
 
+        static TArray<FHex> HexCoverage( const FHexLayout layout, const FVector2D originLoc, float cullDist, uint16 maxRing = 100 )
+        {
+            check( cullDist > 0 );
+
+            maxRing = FMath::Clamp( maxRing, (uint16)0, (uint16)100 );
+
+            TArray<FHex> result;
+
+            const FHex hexCenter = HexRound(PixelToHex( layout, originLoc ) );
+
+            result.AddUnique( hexCenter );
+
+            bool mustStopSearching = false; // If none of the hex gets covered in the ring
+            for(uint16 i = 1; i < maxRing && !mustStopSearching; ++i)
+            {
+                mustStopSearching = true;
+
+                TArray<FHex> hexOfRing = HexRing( hexCenter, i );
+                for (const FHex& hex : hexOfRing)
+                {
+                    const FVector2D hexLocation = HexToPixel( layout, hex );
+                    const FVector2D dir = ( hexLocation - originLoc ).GetSafeNormal( );
+                    const FVector2D hexCoveredLoc = originLoc + dir * cullDist;
+
+                    const FHex hexCovered = HexRound( PixelToHex( layout, hexCoveredLoc ) );
+                    if( hexCovered == hex )
+                    {
+                        result.AddUnique( hex );
+                        mustStopSearching = false;
+                    }
+                }
+            }
+
+            return result;
+        }
+
     public:
         static const TArray<FHex> HexDirections;
     };
 };
-
-bool operator == ( const FHex& a, const FHex& b );
-bool operator != ( const FHex& a, const FHex& b );
-bool operator == ( const hexsystem::FFractionalHex& a, const hexsystem::FFractionalHex& b );
-bool operator != ( const hexsystem::FFractionalHex& a, const hexsystem::FFractionalHex& b );
 
 #if UE_BUILD_DEBUG
 uint32 GetTypeHash( const FHex& hex );

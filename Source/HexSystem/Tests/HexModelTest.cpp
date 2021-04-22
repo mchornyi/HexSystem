@@ -207,5 +207,22 @@ bool FHexModelTest::RunTest( const FString& Parameters )
         TestEqual( TEXT( "HexRing2" ), result, expected );
     }
 
+    //Test: HexCoverage
+    {
+        const FVector2D originLoc( -306.109924f, -84.516525f );
+        FHexLayout layout;
+        layout.size = { 200.0f, 200.0f };
+        layout.origin = { -30.0f, -30.0f };
+
+        const TArray<FHex> result = FHexModel::HexCoverage( layout, originLoc, 200.0f );
+
+        // The order matters for comparison
+        const FHex hexArr[ ] = { {-1, 0, 1}, {-1, -1, 2}, {0, -1, 1}, {0, 0, 0}, {-1, 1, 0} };
+
+        TArray<FHex> expected( hexArr, UE_ARRAY_COUNT( hexArr ) );
+
+        TestEqual( TEXT( "HexCoverage" ), result, expected );
+    }
+
     return true;
 }
