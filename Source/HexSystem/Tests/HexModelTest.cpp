@@ -207,21 +207,97 @@ bool FHexModelTest::RunTest( const FString& Parameters )
         TestEqual( TEXT( "HexRing2" ), result, expected );
     }
 
-    //Test: HexCoverage
+    //Test: HexCoverage1
     {
         const FVector2D originLoc( -306.109924f, -84.516525f );
         FHexLayout layout;
         layout.size = { 200.0f, 200.0f };
         layout.origin = { -30.0f, -30.0f };
 
-        const TArray<FHex> result = FHexModel::HexCoverage( layout, originLoc, 200.0f );
+        const TArray<FHex> result = FHexModel::HexCoverage( layout, originLoc, 200.0f, 2 );
 
         // The order matters for comparison
         const FHex hexArr[ ] = { {-1, 0, 1}, {-1, -1, 2}, {0, -1, 1}, {0, 0, 0}, {-1, 1, 0} };
 
         TArray<FHex> expected( hexArr, UE_ARRAY_COUNT( hexArr ) );
 
-        TestEqual( TEXT( "HexCoverage" ), result, expected );
+        TestEqual( TEXT( "HexCoverage1" ), result, expected );
+    }
+
+    //Test: HexCoverageWithMaxRing
+    {
+        const FVector2D originLoc( 0.0f, 0.0f );
+        FHexLayout layout;
+        layout.size = { 200.0f, 200.0f };
+        layout.origin = { 0.0f, 0.0f };
+
+        const TArray<FHex> result = FHexModel::HexCoverage( layout, originLoc, 500.0f, 1 );
+
+        // The order matters for comparison
+        const FHex hexArr[ ] = {
+            {0, 0, 0}, {-1, 0, 1}, {0, -1, 1}, {1, -1, 0}, {1, 0, -1}, {0, 1, -1}, {-1, 1, 0}
+        };
+
+        TArray<FHex> expected( hexArr, UE_ARRAY_COUNT( hexArr ) );
+
+        TestEqual( TEXT( "HexCoverageWithMaxRing" ), result, expected );
+    }
+
+    //Test: HexCoverageWithLongCullDist
+    {
+        const FVector2D originLoc( 0.0f, 0.0f );
+        FHexLayout layout;
+        layout.size = { 200.0f, 200.0f };
+        layout.origin = { 0.0f, 0.0f };
+
+        const TArray<FHex> result = FHexModel::HexCoverage( layout, originLoc, 1000.0f, 1 );
+
+        // The order matters for comparison
+        const FHex hexArr[ ] = {
+            {0, 0, 0}, {-1, 0, 1}, {0, -1, 1}, {1, -1, 0}, {1, 0, -1}, {0, 1, -1}, {-1, 1, 0}
+        };
+
+        TArray<FHex> expected( hexArr, UE_ARRAY_COUNT( hexArr ) );
+
+        TestEqual( TEXT( "HexCoverageWithLongCullDist" ), result, expected );
+    }
+
+    //Test: HexCoverageWithMaxDist
+    {
+        const FVector2D originLoc( 0.0f, 0.0f );
+        FHexLayout layout;
+        layout.size = { 200.0f, 200.0f };
+        layout.origin = { 0.0f, 0.0f };
+
+        const TArray<FHex> result = FHexModel::HexCoverage( layout, originLoc, 1000.0f, 1, 1 );
+
+        // The order matters for comparison
+        const FHex hexArr[ ] = {
+            {0, 0, 0}, {-1, 0, 1}, {0, -1, 1}, {1, -1, 0}, {1, 0, -1}, {0, 1, -1}, {-1, 1, 0}
+        };
+
+        TArray<FHex> expected( hexArr, UE_ARRAY_COUNT( hexArr ) );
+
+        TestEqual( TEXT( "HexCoverageWithMaxDist" ), result, expected );
+    }
+
+    //Test: HexCoverageWithMaxDistWithLocation
+    {
+        const FVector2D originLoc( -440.9737f, 260.2950f );
+        FHexLayout layout;
+        layout.size = { 200.0f, 200.0f };
+        layout.origin = { 0.0f, 0.0f };
+
+        const TArray<FHex> result = FHexModel::HexCoverage( layout, originLoc, 1000.0f, 1 );
+
+        // The order matters for comparison
+        const FHex hexArr[ ] = {
+            {-1, 0, 1}, {-1, 1, 0}, {0, -1, 1}, {0, 0, 0}, {0, 1, -1}, {1, -1, 0}, {1, 0, -1}
+        };
+
+        TArray<FHex> expected( hexArr, UE_ARRAY_COUNT( hexArr ) );
+
+        TestEqual( TEXT( "HexCoverageWithMaxDistWithLocation" ), result, expected );
     }
 
     return true;

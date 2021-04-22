@@ -80,17 +80,22 @@ struct FHex
         check( abs( q + r + s ) <= FLT_EPSILON );
     }
 
-    UPROPERTY( )
-    int16 q;
+    bool IsZero( ) const
+    {
+        return q == 0 && r == 0 && s == 0;
+    };
 
     UPROPERTY( )
-    int16 r;
+        int16 q;
 
     UPROPERTY( )
-    int16 s;
+        int16 r;
+
+    UPROPERTY( )
+        int16 s;
 
     UPROPERTY( EditInstanceOnly, Category = "HexLevelInfo" )
-    FHexLevelInfo LevelInfo;
+        FHexLevelInfo LevelInfo;
 };
 
 USTRUCT( )
@@ -98,10 +103,10 @@ struct FHexLayout
 {
     GENERATED_USTRUCT_BODY( )
 
-    hexsystem::FOrientation orientation;
+        hexsystem::FOrientation orientation;
 
     UPROPERTY( EditInstanceOnly, Category = "HexWorldParams", Meta = ( ClampMin = "1", ClampMax = "100000" ) )
-    FVector2D size;
+        FVector2D size;
 
     FVector2D origin;
 
@@ -250,7 +255,7 @@ namespace hexsystem
 
             FHex hex = HexAdd( hexCenter, HexScale( HexDirection( 4 ), ring ) );
 
-            for(uint16 i = 0; i < 6; ++i)
+            for ( uint16 i = 0; i < 6; ++i )
             {
                 for ( uint16 r = 0; r < ring; ++r )
                 {
@@ -262,32 +267,43 @@ namespace hexsystem
             return result;
         }
 
-        static TArray<FHex> HexCoverage( const FHexLayout layout, const FVector2D originLoc, float cullDist, uint16 maxRing = 100 )
+        static TArray<FHex> HexCoverage( const FHexLayout layout, const FVector2D originLoc, float cullDist, uint16 maxDist, uint16 maxRing = 100 )
         {
             check( cullDist > 0 );
 
-            maxRing = FMath::Clamp( maxRing, (uint16)0, (uint16)100 );
+            maxRing = FMath::Clamp( maxRing, ( uint16 )0, ( uint16 )100 );
 
             TArray<FHex> result;
 
-            const FHex hexCenter = HexRound(PixelToHex( layout, originLoc ) );
-
-            result.AddUnique( hexCenter );
+            const FHex hexOrigin = HexRound( PixelToHex( layout, originLoc ) );
+            const uint16 distToHexZero = HexDistance( {}, hexOrigin );
+            if ( distToHexZero <= maxDist )
+                result.AddUnique( hexOrigin );
 
             bool mustStopSearching = false; // If none of the hex gets covered in the ring
-            for(uint16 i = 1; i < maxRing && !mustStopSearching; ++i)
+            for ( uint16 i = 1; i <= maxRing && !mustStopSearching; ++i )
             {
                 mustStopSearching = true;
 
-                TArray<FHex> hexOfRing = HexRing( hexCenter, i );
-                for (const FHex& hex : hexOfRing)
+                TArray<FHex> hexOfRing = HexRing( hexOrigin, i );
+                for ( const FHex& hex : hexOfRing )
                 {
+                    const uint16 hexDistToHexZero = HexDistance( {}, hex );
+
                     const FVector2D hexLocation = HexToPixel( layout, hex );
+                    const float distToOriginSq = ( hexLocation - originLoc ).SizeSquared( );
+                    if ( distToOriginSq <= cullDist * cullDist && hexDistToHexZero <= maxDist )
+                    {
+                        result.AddUnique( hex );
+                        mustStopSearching = false;
+                        continue;
+                    }
+
                     const FVector2D dir = ( hexLocation - originLoc ).GetSafeNormal( );
                     const FVector2D hexCoveredLoc = originLoc + dir * cullDist;
 
                     const FHex hexCovered = HexRound( PixelToHex( layout, hexCoveredLoc ) );
-                    if( hexCovered == hex )
+                    if ( hexCovered == hex && hexDistToHexZero <= maxDist )
                     {
                         result.AddUnique( hex );
                         mustStopSearching = false;
