@@ -5,21 +5,34 @@
 #include "Net/UnrealNetwork.h"
 #include "DrawDebugHelpers.h"
 
-// Sets default values
-AHexReplicatorDebugActor::AHexReplicatorDebugActor()
+namespace
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+    static float sNetCullDistance = 1000.0f;
+
+    static TAutoConsoleVariable<bool> CVar_ShowDebugInfo(
+        TEXT( "hex.HexReplicatorDebugActor.ShowDebugInfo" ),
+        true,
+        TEXT( "Show debug info of AHexReplicatorDebugActor." ),
+        ECVF_Default );
+} // namespace
+
+// Sets default values
+AHexReplicatorDebugActor::AHexReplicatorDebugActor( )
+{
+    RootComponent = CreateDefaultSubobject<USceneComponent>( TEXT( "SceneComponent" ) );
+
+    // Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+    PrimaryActorTick.bCanEverTick = true;
+
     bReplicates = true;
-    NetCullDistanceSquared = 1200 * 1200;
+    NetCullDistanceSquared = sNetCullDistance * sNetCullDistance;
     NetUpdateFrequency = 2;
 }
 
 // Called when the game starts or when spawned
-void AHexReplicatorDebugActor::BeginPlay()
+void AHexReplicatorDebugActor::BeginPlay( )
 {
-	Super::BeginPlay();
-
+    Super::BeginPlay( );
 }
 
 // Called every frame
@@ -31,6 +44,11 @@ void AHexReplicatorDebugActor::Tick( float DeltaTime )
     if ( GetLocalRole( ) == ROLE_Authority )
     {
         OnlineProperty += 0.001f;
+    }
+    else
+    {
+        if(GetActorLocation().X == 0)
+            DrawDebugSphere( GetWorld( ), GetActorLocation( ), sNetCullDistance, 32, FColor::White, false, -1, 2);
     }
 }
 
@@ -46,6 +64,9 @@ void AHexReplicatorDebugActor::GetLifetimeReplicatedProps( TArray <FLifetimeProp
 
 void AHexReplicatorDebugActor::OnRep_OnlineProperty( )
 {
-    auto str = FString::Printf( TEXT( "Property1=%.2f" ), OnlineProperty );
-    DrawDebugString( GetWorld( ), { 0.0f, 0.0f, 0.0f }, str, this, FColor::Green, 0.1f, false, 1.2f );
+    if ( CVar_ShowDebugInfo.GetValueOnGameThread() )
+    {
+        auto str = FString::Printf( TEXT( "Property1=%.2f" ), OnlineProperty );
+        DrawDebugString( GetWorld( ), { 0.0f, 0.0f, 0.0f }, str, this, FColor::Green, 0.1f, false, 1.2f );
+    }
 }

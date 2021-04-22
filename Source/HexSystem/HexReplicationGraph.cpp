@@ -2,7 +2,7 @@
 
 
 #include "HexReplicationGraph.h"
-#if 0
+#if 1
 #include "Net/UnrealNetwork.h"
 #include "Engine/LevelStreaming.h"
 #include "EngineUtils.h"
@@ -15,6 +15,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Engine/LevelScriptActor.h"
 #include "HexSystemCharacter.h"
+#include "HexReplicatorDebugActor.h"
 
 #if WITH_GAMEPLAY_DEBUGGER
 #include "GameplayDebuggerCategoryReplicator.h"
@@ -32,15 +33,15 @@ static FAutoConsoleVariableRef CVarShooterRepGraphDestructMaxDist( TEXT( "Shoote
 int32 CVar_ShooterRepGraph_DisplayClientLevelStreaming = 0;
 static FAutoConsoleVariableRef CVarShooterRepGraphDisplayClientLevelStreaming( TEXT( "ShooterRepGraph.DisplayClientLevelStreaming" ), CVar_ShooterRepGraph_DisplayClientLevelStreaming, TEXT( "" ), ECVF_Default );
 
-float CVar_ShooterRepGraph_CellSize = 10000.f;
+float CVar_ShooterRepGraph_CellSize = 100.f;
 static FAutoConsoleVariableRef CVarShooterRepGraphCellSize( TEXT( "ShooterRepGraph.CellSize" ), CVar_ShooterRepGraph_CellSize, TEXT( "" ), ECVF_Default );
 
 // Essentially "Min X" for replication. This is just an initial value. The system will reset itself if actors appears outside of this.
-float CVar_ShooterRepGraph_SpatialBiasX = -150000.f;
+float CVar_ShooterRepGraph_SpatialBiasX = -1500.f;
 static FAutoConsoleVariableRef CVarShooterRepGraphSpatialBiasX( TEXT( "ShooterRepGraph.SpatialBiasX" ), CVar_ShooterRepGraph_SpatialBiasX, TEXT( "" ), ECVF_Default );
 
 // Essentially "Min Y" for replication. This is just an initial value. The system will reset itself if actors appears outside of this.
-float CVar_ShooterRepGraph_SpatialBiasY = -200000.f;
+float CVar_ShooterRepGraph_SpatialBiasY = -2000.f;
 static FAutoConsoleVariableRef CVarShooterRepSpatialBiasY( TEXT( "ShooterRepGraph.SpatialBiasY" ), CVar_ShooterRepGraph_SpatialBiasY, TEXT( "" ), ECVF_Default );
 
 // How many buckets to spread dynamic, spatialized actors across. High number = more buckets = smaller effective replication frequency. This happens before individual actors do their own NetUpdateFrequency check.
@@ -116,7 +117,7 @@ void UHexReplicationGraph::InitGlobalActorClassSettings( )
 
     auto AddInfo = [ & ]( UClass* Class, EClassRepNodeMapping Mapping )
     {
-        ClassRepNodePolicies.Set( Class, Mapping );
+        mClassRepNodePolicies.Set( Class, Mapping );
     };
 
     //AddInfo( AShooterWeapon::StaticClass( ), EClassRepNodeMapping::NotRouted );				// Handled via DependantActor replication (Pawn)
@@ -125,6 +126,7 @@ void UHexReplicationGraph::InitGlobalActorClassSettings( )
     AddInfo( AReplicationGraphDebugActor::StaticClass( ), EClassRepNodeMapping::NotRouted );				// Not needed. Replicated special case inside RepGraph
     AddInfo( AInfo::StaticClass( ), EClassRepNodeMapping::RelevantAllConnections );	// Non spatialized, relevant to all
     //AddInfo( AShooterPickup::StaticClass( ), EClassRepNodeMapping::Spatialize_Static );		// Spatialized and never moves. Routes to GridNode.
+    AddInfo( AHexReplicatorDebugActor::StaticClass( ), EClassRepNodeMapping::Spatialize_Static );		// Spatialized and never moves. Routes to GridNode.
 
 #if WITH_GAMEPLAY_DEBUGGER
     AddInfo( AGameplayDebuggerCategoryReplicator::StaticClass( ), EClassRepNodeMapping::NotRouted );				// Replicated via UHexReplicationGraphNode_AlwaysRelevant_ForConnection
@@ -154,7 +156,7 @@ void UHexReplicationGraph::InitGlobalActorClassSettings( )
         AllReplicatedClasses.Add( Class );
 
         // Skip if already in the map (added explicitly)
-        if ( ClassRepNodePolicies.Contains( Class, false ) )
+        if ( mClassRepNodePolicies.Contains( Class, false ) )
         {
             continue;
         }
@@ -234,7 +236,7 @@ void UHexReplicationGraph::InitGlobalActorClassSettings( )
             continue;
         }
 
-        const bool bClassIsSpatialized = IsSpatialized( ClassRepNodePolicies.GetChecked( ReplicatedClass ) );
+        const bool bClassIsSpatialized = IsSpatialized( mClassRepNodePolicies.GetChecked( ReplicatedClass ) );
 
         FClassReplicationInfo ClassInfo;
         InitClassReplicationInfo( ClassInfo, ReplicatedClass, bClassIsSpatialized, NetDriver->NetServerMaxTickRate );
@@ -246,14 +248,14 @@ void UHexReplicationGraph::InitGlobalActorClassSettings( )
     UE_LOG( LogHexReplicationGraph, Log, TEXT( "" ) );
     UE_LOG( LogHexReplicationGraph, Log, TEXT( "Class Routing Map: " ) );
     UEnum* Enum = StaticEnum<EClassRepNodeMapping>( );
-    for ( auto ClassMapIt = ClassRepNodePolicies.CreateIterator( ); ClassMapIt; ++ClassMapIt )
+    for ( auto ClassMapIt = mClassRepNodePolicies.CreateIterator( ); ClassMapIt; ++ClassMapIt )
     {
         UClass* Class = CastChecked<UClass>( ClassMapIt.Key( ).ResolveObjectPtr( ) );
         const EClassRepNodeMapping Mapping = ClassMapIt.Value( );
 
         // Only print if different than native class
         UClass* ParentNativeClass = GetParentNativeClass( Class );
-        const EClassRepNodeMapping* ParentMapping = ClassRepNodePolicies.Get( ParentNativeClass );
+        const EClassRepNodeMapping* ParentMapping = mClassRepNodePolicies.Get( ParentNativeClass );
         if ( ParentMapping && Class != ParentNativeClass && Mapping == *ParentMapping )
         {
             continue;
@@ -303,9 +305,7 @@ void UHexReplicationGraph::InitGlobalGraphNodes( )
     //	Spatial Actors
     // -----------------------------------------------
 
-    GridNode = CreateNewNode<UReplicationGraphNode_GridSpatialization2D>( );
-    GridNode->CellSize = CVar_ShooterRepGraph_CellSize;
-    GridNode->SpatialBias = FVector2D( CVar_ShooterRepGraph_SpatialBiasX, CVar_ShooterRepGraph_SpatialBiasY );
+    GridNode = CreateNewNode<UReplicationGraphNode_HexSpatialization2D>( );
 
     if ( CVar_ShooterRepGraph_DisableSpatialRebuilds )
     {
@@ -342,15 +342,15 @@ void UHexReplicationGraph::InitConnectionGraphNodes( UNetReplicationGraphConnect
 
 EClassRepNodeMapping UHexReplicationGraph::GetMappingPolicy( UClass* Class )
 {
-    EClassRepNodeMapping* PolicyPtr = ClassRepNodePolicies.Get( Class );
-    EClassRepNodeMapping Policy = PolicyPtr ? *PolicyPtr : EClassRepNodeMapping::NotRouted;
-    return Policy;
+    EClassRepNodeMapping* policyPtr = mClassRepNodePolicies.Get( Class );
+    EClassRepNodeMapping policy = policyPtr ? *policyPtr : EClassRepNodeMapping::NotRouted;
+    return policy;
 }
 
 void UHexReplicationGraph::RouteAddNetworkActorToNodes( const FNewReplicatedActorInfo& ActorInfo, FGlobalActorReplicationInfo& GlobalInfo )
 {
-    EClassRepNodeMapping Policy = GetMappingPolicy( ActorInfo.Class );
-    switch ( Policy )
+    const EClassRepNodeMapping policy = GetMappingPolicy( ActorInfo.Class );
+    switch ( policy )
     {
     case EClassRepNodeMapping::NotRouted:
     {
@@ -413,7 +413,7 @@ void UHexReplicationGraph::RouteRemoveNetworkActorToNodes( const FNewReplicatedA
             FActorRepListRefView& RepList = AlwaysRelevantStreamingLevelActors.FindChecked( ActorInfo.StreamingLevelName );
             if ( RepList.Remove( ActorInfo.Actor ) == false )
             {
-                UE_LOG( LogHexReplicationGraph, Warning, TEXT( "Actor %s was not found in AlwaysRelevantStreamingLevelActors list. LevelName: %s" ), *GetActorRepListTypeDebugString( ActorInfo.Actor ), *ActorInfo.StreamingLevelName.ToString( ) );
+                UE_LOG( LogHexReplicationGraph, Warning, TEXT( "actor %s was not found in AlwaysRelevantStreamingLevelActors list. LevelName: %s" ), *GetActorRepListTypeDebugString( ActorInfo.Actor ), *ActorInfo.StreamingLevelName.ToString( ) );
             }
         }
         break;
@@ -771,7 +771,7 @@ void UHexReplicationGraph::PrintRepNodePolicies( )
     GLog->Logf( TEXT( "Shooter Replication Routing Policies" ) );
     GLog->Logf( TEXT( "====================================" ) );
 
-    for ( auto It = ClassRepNodePolicies.CreateIterator( ); It; ++It )
+    for ( auto It = mClassRepNodePolicies.CreateIterator( ); It; ++It )
     {
         FObjectKey ObjKey = It.Key( );
 

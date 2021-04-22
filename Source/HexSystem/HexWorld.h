@@ -29,7 +29,7 @@ protected:
 
 private:
 
-#ifdef WITH_EDITOR
+#if WITH_EDITOR
     void Generate( );
     virtual bool ShouldTickIfViewportsOnly( ) const override;
     void DebugGenerateRepActors( );

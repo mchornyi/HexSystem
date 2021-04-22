@@ -1,10 +1,12 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-
+#if 1
 #pragma once
 
 #include "CoreMinimal.h"
-#if 0
+
 #include "ReplicationGraph.h"
+#include "HexReplicationNodes.h"
+
 #include "HexReplicationGraph.generated.h"
 
 class AHexSystemCharacter;
@@ -56,7 +58,7 @@ public:
     TArray<UClass*>	AlwaysRelevantClasses;
 
     UPROPERTY( )
-    UReplicationGraphNode_GridSpatialization2D* GridNode;
+    UReplicationGraphNode_HexSpatialization2D* GridNode;
 
     UPROPERTY( )
     UReplicationGraphNode_ActorList* AlwaysRelevantNode;
@@ -78,12 +80,12 @@ private:
 
     EClassRepNodeMapping GetMappingPolicy( UClass* Class );
 
-    bool IsSpatialized( EClassRepNodeMapping Mapping ) const
+    static bool IsSpatialized( EClassRepNodeMapping mapping )
     {
-        return Mapping >= EClassRepNodeMapping::Spatialize_Static;
+        return mapping >= EClassRepNodeMapping::Spatialize_Static;
     }
 
-    TClassMap<EClassRepNodeMapping> ClassRepNodePolicies;
+    TClassMap<EClassRepNodeMapping> mClassRepNodePolicies;
 };
 
 UCLASS( )
