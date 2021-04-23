@@ -47,7 +47,7 @@ void AHexReplicatorDebugActor::Tick( float DeltaTime )
     }
     else
     {
-        if(GetActorLocation().X == 0)
+        //if(GetActorLocation().X == 0)
             DrawDebugSphere( GetWorld( ), GetActorLocation( ), sNetCullDistance, 32, FColor::White, false, -1, 2);
     }
 }

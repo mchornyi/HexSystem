@@ -1,4 +1,5 @@
 #include "HexReplicationNodes.h"
+#include "CommonCVars.h"
 
 DECLARE_LOG_CATEGORY_EXTERN( LogHexRepGraph, Log, All );
 DEFINE_LOG_CATEGORY( LogHexRepGraph );
@@ -28,13 +29,6 @@ static FAutoConsoleVariableRef CVarRepGraphDebugNextActor(
 
 int32 CVar_RepGraph_Spatial_PauseDynamic = 0;
 static FAutoConsoleVariableRef CVarRepSpatialPauseDynamic( TEXT( "Net.HexRepGraph.Spatial.PauseDynamic" ), CVar_RepGraph_Spatial_PauseDynamic, TEXT( "Pauses updating dynamic actor positions in the spatialization nodes." ), ECVF_Default );
-
-namespace
-{
-    FHexLayout sTmpHexLayout( hexsystem::LayoutPointy, {200.0f, 200.0f }, {0.0f, 0.0f });//TODO: Sync between HexWorld
-    uint16 sTmpMaxRing = 100;//TODO... Pass here real rings num
-    uint16 sTmpMaxHexDistToCenter = 1;//TODO... Pass here real dist num
-};
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -534,9 +528,10 @@ void UReplicationGraphNode_HexSpatialization2D::GatherActorListsForConnection( c
         //@todo: if this is clamp view loc this is now redundant...
         lastLocationForConnection = lastLocationForConnection.BoundToCube( HALF_WORLD_MAX );
 
+        const FHexLayout tmpHexLayout( hexsystem::LayoutPointy, { Global_WorldHexSize, Global_WorldHexSize }, { 0.0f, 0.0f } );
         FPlayerHexCellInfo newPlayerCell;
-        newPlayerCell.curHex = FHexModel::HexRound( FHexModel::PixelToHex( sTmpHexLayout, FPoint( clampedViewLoc ) ) );
-        newPlayerCell.prevHex = FHexModel::HexRound( FHexModel::PixelToHex( sTmpHexLayout, FPoint( lastLocationForConnection ) ) );
+        newPlayerCell.curHex = FHexModel::HexRound( FHexModel::PixelToHex( tmpHexLayout, FPoint( clampedViewLoc ) ) );
+        newPlayerCell.prevHex = FHexModel::HexRound( FHexModel::PixelToHex( tmpHexLayout, FPoint( lastLocationForConnection ) ) );
 
         // Add this to things we consider later.
         activeHexCells.Add( newPlayerCell );
@@ -704,7 +699,8 @@ TArray<UReplicationGraphNode_HexCell*> UReplicationGraphNode_HexSpatialization2D
 
     TArray<UReplicationGraphNode_HexCell*> result;
 
-    const TArray<FHex> hexCoverage = FHexModel::HexCoverage( sTmpHexLayout, FVector2D( clampedLocation ), cullDistance, sTmpMaxHexDistToCenter, sTmpMaxRing );
+    const FHexLayout tmpHexLayout( hexsystem::LayoutPointy, { Global_WorldHexSize, Global_WorldHexSize }, { 0.0f, 0.0f } );
+    const TArray<FHex> hexCoverage = FHexModel::HexCoverage( tmpHexLayout, FVector2D( clampedLocation ), cullDistance, Global_WorldHexRingsNum, Global_WorldHexRingsNum * 2 );
 
     for ( const FHex& hex : hexCoverage )
     {

@@ -7,6 +7,7 @@
 #include "HexReplicatorDebugActor.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/AssetManager.h"
+#include "CommonCVars.h"
 
 DECLARE_LOG_CATEGORY_EXTERN( HexTrace, Log, All );
 DEFINE_LOG_CATEGORY( HexTrace );
@@ -51,22 +52,10 @@ namespace
     void DrawDebugHex( UWorld* inWorld, const FHexLayout& layout, const FHex& hex, float posZ, bool isActorInside, bool isHexVisible, bool isHexCovered );
     void DrawCharacterInfo( UWorld* inWorld, float actorHexWorldPosZ );
 
-    static TAutoConsoleVariable<int> CVar_HexRingsNum(
-        TEXT( "hex.HexRingsNum" ),
-        6,
-        TEXT( "Defines the number of hex rings." ),
-        ECVF_Default );
-
     static TAutoConsoleVariable<int> CVar_HexDistVisibility(
         TEXT( "hex.HexDistVisibility" ),
         3,
         TEXT( "Defines the distance of hex visibility in a context of hex model." ),
-        ECVF_Default );
-
-    static TAutoConsoleVariable<float> CVar_HexSize(
-        TEXT( "hex.HexSize" ),
-        100.0f,
-        TEXT( "Defines the size of hex cell." ),
         ECVF_Default );
 
     static TAutoConsoleVariable<float> CVar_LineThickness(
@@ -101,21 +90,20 @@ AHexWorld::AHexWorld( )
     PrimaryActorTick.bCanEverTick = true;
 
 #if WITH_EDITOR
-    CVar_HexSize.AsVariable( )->SetOnChangedCallback(
-        FConsoleVariableDelegate::CreateLambda( [ this ]( IConsoleVariable* Variable )
-    {
-        UE_LOG( HexTrace, Display, TEXT( __FUNCTION__ ) );
-        const float size= FMath::Clamp<float>( CVar_HexSize.GetValueOnGameThread( ), 1, 10000 );
-        HexLayout.size = { size, size };
-    } ) );
+    //CVar_WorldHexSize.AsVariable( )->SetOnChangedCallback(
+    //    FConsoleVariableDelegate::CreateLambda( [ this ]( IConsoleVariable* Variable )
+    //{
+    //    UE_LOG( HexTrace, Display, TEXT( __FUNCTION__ ) );
+    //    const float size= FMath::Clamp<float>( CVar_WorldHexSize.GetValueOnGameThread( ), 1, 10000 );
+    //    HexLayout.size = { size, size };
+    //} ) );
 
-    CVar_HexRingsNum.AsVariable( )->SetOnChangedCallback(
-        FConsoleVariableDelegate::CreateLambda( [ this ]( IConsoleVariable* Variable )
-    {
-        UE_LOG( HexTrace, Display, TEXT( __FUNCTION__ ) );
-        HexRingsNum = FMath::Clamp<uint32>( CVar_HexRingsNum.GetValueOnGameThread( ), 1, 100 );
-        Generate( );
-    } ) );
+    //CVar_WorldHexRingsNum.AsVariable( )->SetOnChangedCallback(
+    //    FConsoleVariableDelegate::CreateLambda( [ this ]( IConsoleVariable* Variable )
+    //{
+    //    UE_LOG( HexTrace, Display, TEXT( __FUNCTION__ ) );
+    //    HexRingsNum = FMath::Clamp<uint32>( CVar_WorldHexRingsNum.GetValueOnGameThread( ), 1, 100 );
+    //} ) );
 
     CVar_HexDistVisibility.AsVariable( )->SetOnChangedCallback(
         FConsoleVariableDelegate::CreateLambda( [ this ]( IConsoleVariable* Variable )
@@ -137,7 +125,7 @@ void AHexWorld::PostEditChangeProperty( FPropertyChangedEvent& e )
 {
     UE_LOG( HexTrace, Display, TEXT( __FUNCTION__ ) );
 
-    FName propertyName = ( e.Property != NULL ) ? e.Property->GetFName( ) : NAME_None;
+    const FName propertyName = ( e.Property != NULL ) ? e.Property->GetFName( ) : NAME_None;
     if ( propertyName == GET_MEMBER_NAME_CHECKED( AHexWorld, bHexGenerateTrigger ) )
     {
         if ( bHexGenerateTrigger == true )
@@ -148,6 +136,9 @@ void AHexWorld::PostEditChangeProperty( FPropertyChangedEvent& e )
     }
 
     Super::PostEditChangeProperty( e );
+
+    Global_WorldHexRingsNum = HexRingsNum;
+    Global_WorldHexSize = HexLayout.size.X;
 }
 #endif
 
@@ -198,12 +189,12 @@ void AHexWorld::TickInEditor( float DeltaTime )
         const bool isHexVisible =
             FHexModel::HexDistance( hex, currentHex ) <= HexDistVisibility;
 
-        const bool isHexCovered = hexesCovered.Contains(hex);
+        const bool isHexCovered = hexesCovered.Contains( hex );
 
         DrawDebugHex( GetWorld( ), HexLayout, hex, actorWorlLoc.Z, isActorInside, isHexVisible, isHexCovered );
     }
 
-    DrawCharacterInfo( GetWorld( ), GetActorLocation().Z );
+    DrawCharacterInfo( GetWorld( ), GetActorLocation( ).Z );
 
     // This is placed here because Engine calls obj construction twice even though
     // there is only one copy.
@@ -251,20 +242,34 @@ void AHexWorld::DebugGenerateRepActors( )
         spawnParameters.Instigator = GetInstigator( );
         spawnParameters.Owner = this;
 
-        //static auto SItemToStream = TSoftClassPtr<AHexReplicatorDebugActor>( FSoftObjectPath( TEXT( "/Game/ThirdPersonCPP/Blueprints/BP_HexReplicatorDebugActor.BP_HexReplicatorDebugActor_C" ) ));
-        //static auto* SStreamedActor = SItemToStream.LoadSynchronous( );
-
-        //if ( SStreamedActor )
-        //{
-            auto debugActorNum = FMath::Clamp( CVar_DebugActorNum.GetValueOnGameThread( ), 0, 1000 );
-            for (int i = 0; i < debugActorNum; ++i )
+        auto spawnRawActor = [ & ]( )
+        {
+            const auto debugActorNum = FMath::Clamp( CVar_DebugActorNum.GetValueOnGameThread( ), 0, 1000 );
+            for ( int i = 0; i < debugActorNum; ++i )
             {
-                //auto* spawnedActor = GetWorld( )->SpawnActor<AHexReplicatorDebugActor>( SStreamedActor, spawnLocation, spawnRotation, spawnParameters );
                 auto* spawnedActor = GetWorld( )->SpawnActor<AHexReplicatorDebugActor>( spawnLocation, spawnRotation, spawnParameters );
-                spawnedActor->GetRootComponent( )->AttachToComponent( GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform );
+                spawnedActor->GetRootComponent( )->AttachToComponent( GetRootComponent( ), FAttachmentTransformRules::KeepRelativeTransform );
                 spawnedActor->SetFolderPath( TEXT( "/Debug/HexReplicatorDebugActor" ) );
             }
-        //}
+        };
+
+        auto spawnBlueprintActor = [ & ]( )
+        {
+            static auto SItemToStream = TSoftClassPtr<AHexReplicatorDebugActor>( FSoftObjectPath( TEXT( "/Game/ThirdPersonCPP/Blueprints/BP_HexReplicatorDebugActor.BP_HexReplicatorDebugActor_C" ) ) );
+            static auto* SStreamedActor = SItemToStream.LoadSynchronous( );
+
+            if ( SStreamedActor )
+            {
+                auto debugActorNum = FMath::Clamp( CVar_DebugActorNum.GetValueOnGameThread( ), 0, 1000 );
+                for ( int i = 0; i < debugActorNum; ++i )
+                {
+                    auto* spawnedActor = GetWorld( )->SpawnActor<AHexReplicatorDebugActor>( SStreamedActor, spawnLocation, spawnRotation, spawnParameters );
+                    spawnedActor->SetFolderPath( TEXT( "/Debug/HexReplicatorDebugActor" ) );
+                }
+            }
+        };
+
+        spawnBlueprintActor( );
 
         /*const FSoftObjectPath itemToStream( TEXT("Blueprint'/Game/ThirdPersonCPP/Blueprints/BP_HexReplicatorDebugActor.BP_HexReplicatorDebugActor'") );
         FStreamableManager& streamable = UAssetManager::Get( ).GetStreamableManager( );
@@ -272,6 +277,14 @@ void AHexWorld::DebugGenerateRepActors( )
         const auto* spawnedActor = Cast<UBlueprint>(req->GetLoadedAsset( ));
         GetWorld( )->SpawnActor<AHexReplicatorDebugActor>( spawnedActor->GeneratedClass, spawnLocation, spawnRotation, spawnParameters );*/
     }
+}
+
+void AHexWorld::PostLoad( )
+{
+    Super::PostLoad( );
+
+    Global_WorldHexRingsNum = HexRingsNum;
+    Global_WorldHexSize = HexLayout.size.X;
 }
 
 namespace
@@ -293,7 +306,7 @@ namespace
             posZ += 3.0f;
         }
 
-        if( isHexCovered )
+        if ( isHexCovered )
         {
             Color = FColor( 235, 235, 52 );
             posZ += 3.0f;
@@ -338,7 +351,7 @@ namespace
         check( inWorld );
 
         APlayerController* playerController = UGameplayStatics::GetPlayerController( inWorld, 0 );
-        if( !playerController )
+        if ( !playerController )
             return;
 
         FVector viewLocation;
@@ -350,8 +363,8 @@ namespace
         DrawDebugPoint( inWorld, viewLocation, 10.0f, FColor( 155, 0, 0 ), false, -1.0f, 100 );
 
         DrawCircle( inWorld, viewLocation,
-                    {1, 0 , 0},{0, 1, 0},
-                    FColor::White, CVar_DebugCharacterCullDist.GetValueOnGameThread(), 24,
+                    { 1, 0 , 0 }, { 0, 1, 0 },
+                    FColor::White, CVar_DebugCharacterCullDist.GetValueOnGameThread( ), 24,
                     false, -1, SDPG_World, 2 );
     }
 } // namespace
