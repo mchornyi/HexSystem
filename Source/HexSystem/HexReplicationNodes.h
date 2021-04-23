@@ -144,11 +144,12 @@ private:
 
     struct FDynamicActorInfo
     {
-        FDynamicActorInfo( const FNewReplicatedActorInfo& inInfo ) : actorInfo( inInfo )//, cellInfo( )
+        FDynamicActorInfo( const FNewReplicatedActorInfo& inInfo ) : actorInfo( inInfo ), prevLocation(NAN, NAN )
         {
         }
 
         FNewReplicatedActorInfo actorInfo;
+        FVector2D prevLocation;
     };
 
     struct FStaticActorInfo
