@@ -3,7 +3,6 @@
 
 #include "HexReplicationGraph.h"
 #if 1
-#include "Net/UnrealNetwork.h"
 #include "Engine/LevelStreaming.h"
 #include "EngineUtils.h"
 #include "CoreGlobals.h"
@@ -16,6 +15,7 @@
 #include "Engine/LevelScriptActor.h"
 #include "HexSystemCharacter.h"
 #include "HexReplicatorDebugActor.h"
+#include "HexReplicatorDebugDynamicActor.h"
 
 #if WITH_GAMEPLAY_DEBUGGER
 #include "GameplayDebuggerCategoryReplicator.h"
@@ -127,6 +127,7 @@ void UHexReplicationGraph::InitGlobalActorClassSettings( )
     AddInfo( AInfo::StaticClass( ), EClassRepNodeMapping::RelevantAllConnections );	// Non spatialized, relevant to all
     //AddInfo( AShooterPickup::StaticClass( ), EClassRepNodeMapping::Spatialize_Static );		// Spatialized and never moves. Routes to GridNode.
     AddInfo( AHexReplicatorDebugActor::StaticClass( ), EClassRepNodeMapping::Spatialize_Static );		// Spatialized and never moves. Routes to GridNode.
+    AddInfo( AHexReplicatorDebugDynamicActor::StaticClass( ), EClassRepNodeMapping::Spatialize_Dynamic );
 
 #if WITH_GAMEPLAY_DEBUGGER
     AddInfo( AGameplayDebuggerCategoryReplicator::StaticClass( ), EClassRepNodeMapping::NotRouted );				// Replicated via UHexReplicationGraphNode_AlwaysRelevant_ForConnection

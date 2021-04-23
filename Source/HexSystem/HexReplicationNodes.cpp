@@ -320,7 +320,7 @@ void UReplicationGraphNode_HexSpatialization2D::RemoveActorInternal_Dynamic( con
     mDynamicSpatializedActors.Remove( actorInfo.Actor );
 }
 
-void UReplicationGraphNode_HexSpatialization2D::RemoveActorInternal_Static( const FNewReplicatedActorInfo& actorInfo )
+void UReplicationGraphNode_HexSpatialization2D::RemoveActorInternal_Static( const FNewReplicatedActorInfo& actorRepInfo )
 {
     UE_LOG( LogHexRepGraph, Display, TEXT( __FUNCTION__ ) );
     RG_QUICK_SCOPE_CYCLE_COUNTER( UReplicationGraphNode_HexSpatialization2D_RemoveActorInternal_Static );
@@ -328,29 +328,32 @@ void UReplicationGraphNode_HexSpatialization2D::RemoveActorInternal_Static( cons
     if ( !GraphGlobals.IsValid( ) )
         return;
 
-    if ( mStaticSpatializedActors.Remove( actorInfo.Actor ) <= 0 )
+    if ( mStaticSpatializedActors.Remove( actorRepInfo.Actor ) <= 0 )
     {
         // May have been a pending actor
         for ( int32 idx = mPendingStaticSpatializedActors.Num( ) - 1; idx >= 0; --idx )
         {
-            if ( mPendingStaticSpatializedActors[ idx ].actor == actorInfo.Actor )
+            if ( mPendingStaticSpatializedActors[ idx ].actor == actorRepInfo.Actor )
             {
                 mPendingStaticSpatializedActors.RemoveAtSwap( idx, 1, false );
                 return;
             }
         }
 
-        UE_LOG( LogHexRepGraph, Warning, TEXT( "RemoveActorInternal_Static attempted remove %s from static list but it was not there." ), *GetActorRepListTypeDebugString( actorInfo.Actor ) );
+        UE_LOG( LogHexRepGraph, Warning, TEXT( "RemoveActorInternal_Static attempted remove %s from static list but it was not there." ), *GetActorRepListTypeDebugString( actorRepInfo.Actor ) );
     }
 
-    FGlobalActorReplicationInfo& actorRepGlobalInfo = GraphGlobals->GlobalActorReplicationInfoMap->Get( actorInfo.Actor );
+    FGlobalActorReplicationInfo& actorRepGlobalInfo = GraphGlobals->GlobalActorReplicationInfoMap->Get( actorRepInfo.Actor );
 
     // Remove it from the actual node it should still be in. Note that even if the actor did move in between this and the last replication frame, the FGlobalActorReplicationInfo would not have been updated
-    for ( auto& hexCell : mHexCells )
-        hexCell.Value->RemoveStaticActor( actorInfo, actorRepGlobalInfo, actorRepGlobalInfo.bWantsToBeDormant );
+
+    TArray<UReplicationGraphNode_HexCell*> hexCells = GetHexCellCoverage( actorRepGlobalInfo.WorldLocation, actorRepGlobalInfo.Settings.GetCullDistance( ) );
+
+    for ( auto hexCell : hexCells )
+        hexCell->RemoveStaticActor( actorRepInfo, actorRepGlobalInfo, actorRepGlobalInfo.bWantsToBeDormant );
 
     if ( CVar_RepGraph_Verify )
-        RepGraphVerifySlow( actorInfo.Actor, actorRepGlobalInfo, false );
+        RepGraphVerifySlow( actorRepInfo.Actor, actorRepGlobalInfo, false );
 }
 
 void UReplicationGraphNode_HexSpatialization2D::OnNetDormancyChange( FActorRepListType Actor, FGlobalActorReplicationInfo& GlobalInfo, ENetDormancy NewValue, ENetDormancy OldValue )

@@ -14,3 +14,10 @@
 
 int Global_WorldHexRingsNum = 1;
 float Global_WorldHexSize = 200.0f;
+float Global_NetCullDistanceHexRepActor = 1000.0f;
+
+TAutoConsoleVariable<bool> CVar_ShowDebugInfoForHexRepActor(
+    TEXT( "hex.HexRepActor.ShowDebugInfo" ),
+    true,
+    TEXT( "Show debug info of AHexReplicatorDebugActor." ),
+    ECVF_Default );

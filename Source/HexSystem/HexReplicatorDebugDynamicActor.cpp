@@ -1,13 +1,15 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "HexReplicatorDebugActor.h"
+#include "HexReplicatorDebugDynamicActor.h"
+
 #include "Net/UnrealNetwork.h"
 #include "DrawDebugHelpers.h"
 #include "CommonCVars.h"
 
 // Sets default values
-AHexReplicatorDebugActor::AHexReplicatorDebugActor( )
+AHexReplicatorDebugDynamicActor::AHexReplicatorDebugDynamicActor( )
+: mMovingCenter(ForceInitToZero), mMovingRadius(500.0f), mMovingAngle(0.0f)
 {
     RootComponent = CreateDefaultSubobject<USceneComponent>( TEXT( "SceneComponent" ) );
 
@@ -15,19 +17,22 @@ AHexReplicatorDebugActor::AHexReplicatorDebugActor( )
     PrimaryActorTick.bCanEverTick = true;
 
     SetReplicates( true );
+    SetReplicateMovement( true );
 
     NetCullDistanceSquared = Global_NetCullDistanceHexRepActor * Global_NetCullDistanceHexRepActor;
-    NetUpdateFrequency = 2;
+    NetUpdateFrequency = 10;
 }
 
 // Called when the game starts or when spawned
-void AHexReplicatorDebugActor::BeginPlay( )
+void AHexReplicatorDebugDynamicActor::BeginPlay( )
 {
     Super::BeginPlay( );
+
+    mMovingCenter = GetActorLocation( );
 }
 
 // Called every frame
-void AHexReplicatorDebugActor::Tick( float DeltaTime )
+void AHexReplicatorDebugDynamicActor::Tick( float DeltaTime )
 {
     Super::Tick( DeltaTime );
 
@@ -35,25 +40,38 @@ void AHexReplicatorDebugActor::Tick( float DeltaTime )
     if ( GetLocalRole( ) == ROLE_Authority )
     {
         OnlineProperty += 0.001f;
+
+        mMovingAngle += DeltaTime * 0.5f;
+        mMovingAngle = FMath::Clamp( mMovingAngle, 0.0f, 360.0f );
+
+        if ( mMovingAngle > 360 )
+            mMovingAngle = 0.0f;
+
+        float dX = FMath::Cos( mMovingAngle ) * mMovingRadius;
+        float dY = FMath::Sin( mMovingAngle ) * mMovingRadius;
+        dX += mMovingCenter.X;
+        dY += mMovingCenter.Y;
+
+        SetActorLocation( { dX, dY, mMovingCenter.Z } );
     }
     else
     {
         //if(GetActorLocation().X == 0)
-            DrawDebugSphere( GetWorld( ), GetActorLocation( ), Global_NetCullDistanceHexRepActor, 32, FColor::White, false, -1, 2);
+            DrawDebugSphere( GetWorld( ), GetActorLocation( ), Global_NetCullDistanceHexRepActor, 64, FColor::Blue, false, -1, 2);
     }
 }
 
 //////////////////////////////////////////////////////////////////////////
 // Replicated Properties
-void AHexReplicatorDebugActor::GetLifetimeReplicatedProps( TArray <FLifetimeProperty>& OutLifetimeProps ) const
+void AHexReplicatorDebugDynamicActor::GetLifetimeReplicatedProps( TArray <FLifetimeProperty>& OutLifetimeProps ) const
 {
     Super::GetLifetimeReplicatedProps( OutLifetimeProps );
 
     //Replicate current health.
-    DOREPLIFETIME( AHexReplicatorDebugActor, OnlineProperty );
+    DOREPLIFETIME( AHexReplicatorDebugDynamicActor, OnlineProperty );
 }
 
-void AHexReplicatorDebugActor::OnRep_OnlineProperty( )
+void AHexReplicatorDebugDynamicActor::OnRep_OnlineProperty( )
 {
     if ( CVar_ShowDebugInfoForHexRepActor.GetValueOnGameThread() )
     {
