@@ -453,17 +453,32 @@ void UReplicationGraphNode_HexSpatialization2D::PrepareForReplication( )
             const FVector actorLocationCurrent = dynamicActor->GetActorLocation( );
             actorRepGlobalInfo.WorldLocation = actorLocationCurrent;
 
+            auto curHexCellsForAdding = GetHexCellCoverage( actorLocationCurrent, actorRepGlobalInfo.Settings.GetCullDistance( ) );
+
             if ( !FMath::IsNaN( dynamicActorInfo.prevLocation.X ) && !FMath::IsNaN( dynamicActorInfo.prevLocation.Y ) )
             {
-                auto hexCells = GetHexCellCoverage( FVector( dynamicActorInfo.prevLocation, 0.0f ), actorRepGlobalInfo.Settings.GetCullDistance( ) );
-                for ( auto hexCell : hexCells )
-                    hexCell->RemoveDynamicActor( dynamicActorInfo.actorInfo );
+                auto prevHexCells = GetHexCellCoverage( FVector( dynamicActorInfo.prevLocation, 0.0f ), actorRepGlobalInfo.Settings.GetCullDistance( ) );
+
+                // Remove only from those cells that are completely free of a player
+                for (auto prevHexCellForRemoving: prevHexCells )
+                {
+                    if( !curHexCellsForAdding.Contains( prevHexCellForRemoving ))
+                        prevHexCellForRemoving->RemoveDynamicActor( dynamicActorInfo.actorInfo );
+                }
+
+                // Add into the cells that are completely new to a player
+                for ( auto curHexCellToAdd : curHexCellsForAdding )
+                {
+                    if ( !prevHexCells.Contains( curHexCellToAdd ) )
+                        curHexCellToAdd->AddDynamicActor( dynamicActorInfo.actorInfo );
+                }
             }
-
-
-            auto hexCells = GetHexCellCoverage( actorLocationCurrent, actorRepGlobalInfo.Settings.GetCullDistance( ) );
-            for ( auto hexCell : hexCells )
-                hexCell->AddDynamicActor( dynamicActorInfo.actorInfo );
+            else
+            {
+                // Add into the cells that are completely new to a player
+                for ( auto curHexCellToAdd : curHexCellsForAdding )
+                    curHexCellToAdd->AddDynamicActor( dynamicActorInfo.actorInfo );
+            }
 
             dynamicActorInfo.prevLocation = FVector2D( actorLocationCurrent );
         }
