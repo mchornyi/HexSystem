@@ -18,6 +18,7 @@
 #include "DebugActors/HexReplicatorDebugActor.h"
 #include "DebugActors/HexReplicatorDebugDynamicActor.h"
 #include "DebugActors/HexReplicatorDebugDormantActor.h"
+#include "HexSpatialization2DNode.h"
 
 #if WITH_GAMEPLAY_DEBUGGER
 #include "GameplayDebuggerCategoryReplicator.h"
@@ -309,10 +310,10 @@ void UHexReplicationGraph::InitGlobalGraphNodes( )
     //	Spatial Actors
     // -----------------------------------------------
 
-    //GridNode = CreateNewNode<UReplicationGraphNode_HexSpatialization2D>( );
-    GridNode = CreateNewNode<UReplicationGraphNode_GridSpatialization2D>( );
-    GridNode->CellSize = CVar_ShooterRepGraph_CellSize;
-    GridNode->SpatialBias = FVector2D( CVar_ShooterRepGraph_SpatialBiasX, CVar_ShooterRepGraph_SpatialBiasY );
+    GridNode = CreateNewNode<UReplicationGraphNode_HexSpatialization2D>( );
+    //GridNode = CreateNewNode<UReplicationGraphNode_GridSpatialization2D>( );
+    //GridNode->CellSize = CVar_ShooterRepGraph_CellSize;
+    //GridNode->SpatialBias = FVector2D( CVar_ShooterRepGraph_SpatialBiasX, CVar_ShooterRepGraph_SpatialBiasY );
 
     if ( CVar_ShooterRepGraph_DisableSpatialRebuilds )
     {

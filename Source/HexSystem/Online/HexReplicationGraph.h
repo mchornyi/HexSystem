@@ -12,7 +12,7 @@ class AHexSystemCharacter;
 class UReplicationGraphNode_GridSpatialization2D;
 class AGameplayDebuggerCategoryReplicator;
 class APlayerController;
-
+class UReplicationGraphNode_HexSpatialization2D;
 
 DECLARE_LOG_CATEGORY_EXTERN( LogHexReplicationGraph, Display, All );
 
@@ -58,8 +58,8 @@ public:
     TArray<UClass*>	AlwaysRelevantClasses;
 
     UPROPERTY( )
-    UReplicationGraphNode_GridSpatialization2D* GridNode;
-    //UReplicationGraphNode_HexSpatialization2D* GridNode;
+    //UReplicationGraphNode_GridSpatialization2D* GridNode;
+    UReplicationGraphNode_HexSpatialization2D* GridNode;
 
     UPROPERTY( )
     UReplicationGraphNode_ActorList* AlwaysRelevantNode;

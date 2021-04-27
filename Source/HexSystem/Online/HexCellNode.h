@@ -1,12 +1,13 @@
 #pragma once
 
 #include "ReplicationGraph.h"
-#include "ReplicationGraphTypes.h"
 #include "../HexModel.h"
+
+#include "HexDormancyNode.h"
 
 #include "HexCellNode.generated.h"
 
-// -----------------------------------
+class UReplicationGraphNode_HexDormancyNode;
 
 UCLASS( )
 class HEXSYSTEM_API UReplicationGraphNode_HexCell : public UReplicationGraphNode_ActorList
@@ -53,12 +54,12 @@ public:
         return mHex;
     }
 
-    UReplicationGraphNode_DormancyNode* GetDormancyNode( )
+    UReplicationGraphNode_HexDormancyNode* GetDormancyNode( )
     {
         if ( DormancyNode != nullptr )
             return DormancyNode;
 
-        DormancyNode = CreateChildNode<UReplicationGraphNode_DormancyNode>( );
+        DormancyNode = CreateChildNode<UReplicationGraphNode_HexDormancyNode>( );
 
         return DormancyNode;
     }
@@ -69,7 +70,7 @@ private:
     UReplicationGraphNode* DynamicNode = nullptr;
 
     UPROPERTY( )
-    UReplicationGraphNode_DormancyNode* DormancyNode = nullptr;
+    UReplicationGraphNode_HexDormancyNode* DormancyNode = nullptr;
 
     UReplicationGraphNode* GetDynamicNode( )
     {

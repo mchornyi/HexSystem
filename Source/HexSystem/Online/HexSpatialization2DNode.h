@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ReplicationGraph.h"
-#include "ReplicationGraphTypes.h"
 #include "../HexModel.h"
 
 #include "HexSpatialization2DNode.generated.h"

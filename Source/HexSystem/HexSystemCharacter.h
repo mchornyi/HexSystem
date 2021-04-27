@@ -34,6 +34,9 @@ public:
 	UPROPERTY( EditDefaultsOnly, Category = "Health" )
 	float MaxHealth;
 
+	// Called every frame
+	virtual void Tick( float DeltaTime ) override;
+
 protected:
 
 	/** Resets HMD orientation in VR. */
@@ -127,6 +130,8 @@ private:
 	UPROPERTY( ReplicatedUsing = OnRep_CurrentHealth )
 	float CurrentHealth;
 
+	UFUNCTION( Server, Reliable )
+    void ServerRPCEnableFlushing( bool value );
 private:
 	/** RepNotify for changes made to current health.*/
 	UFUNCTION( )

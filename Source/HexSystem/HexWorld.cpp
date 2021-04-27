@@ -112,6 +112,7 @@ AHexWorld::AHexWorld( )
         HexDistVisibility = FMath::Clamp<uint32>( CVar_HexDistVisibility.GetValueOnGameThread( ), 1, 100 );;
     } ) );
 #endif
+
 }
 
 // Called when the game starts or when spawned
@@ -155,6 +156,7 @@ void AHexWorld::PostEditChangeProperty( FPropertyChangedEvent& e )
 void AHexWorld::Tick( float DeltaTime )
 {
     Super::Tick( DeltaTime );
+
 #if WITH_EDITOR
     TickInEditor( DeltaTime );
 #endif

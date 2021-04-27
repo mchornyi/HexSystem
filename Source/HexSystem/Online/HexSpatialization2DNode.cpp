@@ -216,20 +216,13 @@ void UReplicationGraphNode_HexSpatialization2D::OnNetDormancyChange( FActorRepLi
     {
         // actor was dynamic and is now static. Remove from dynamic list and add to static.
         FNewReplicatedActorInfo actorInfo( Actor );
-
         RemoveActorInternal_Dynamic( actorInfo );
-
-        GlobalInfo.bWantsToBeDormant = true;
         AddActorInternal_Static( actorInfo, GlobalInfo, true );
     }
     else if ( !bCurrentShouldBeStatic && bPreviousShouldBeStatic )
     {
         const FNewReplicatedActorInfo actorInfo( Actor );
-
-        GlobalInfo.bWantsToBeDormant = true;
-
         RemoveActorInternal_Static( actorInfo );
-
         AddActorInternal_Dynamic( actorInfo );
     }
 }
@@ -439,14 +432,14 @@ void UReplicationGraphNode_HexSpatialization2D::GatherActorListsForConnection( c
 
                 if ( UReplicationGraphNode_HexCell* hexCell = *mHexCells.Find( hexCellInfo.curHex ) )
                 {
-                    if ( UReplicationGraphNode_DormancyNode* dormancyNode = hexCell->GetDormancyNode( ) )
+                    if ( UReplicationGraphNode_HexDormancyNode* dormancyNode = hexCell->GetDormancyNode( ) )
                         dormancyNode->ConditionalGatherDormantDynamicActors( dormantActorList, Params, nullptr );
                 }
 
                 // Determine dormant actors for our last location. Do not add actors if they are relevant to anyone.
                 if ( UReplicationGraphNode_HexCell* prevCell = *mHexCells.Find( hexCellInfo.prevHex ) )
                 {
-                    if ( UReplicationGraphNode_DormancyNode* dormancyNode = prevCell->GetDormancyNode( ) )
+                    if ( UReplicationGraphNode_HexDormancyNode* dormancyNode = prevCell->GetDormancyNode( ) )
                         dormancyNode->ConditionalGatherDormantDynamicActors( prevDormantActorList, Params, &dormantActorList, true );
                 }
             }
@@ -471,10 +464,10 @@ void UReplicationGraphNode_HexSpatialization2D::GatherActorListsForConnection( c
                     auto hexCells = GetHexCellCoverage( actor->GetActorLocation( ), actorInfo->GetCullDistance( ) );
                     for ( auto hexCell : hexCells )
                     {
-                        if ( UReplicationGraphNode_DormancyNode* dormancyNode = hexCell->GetDormancyNode( ) )
+                        if ( auto dormancyNode = hexCell->GetDormancyNode( ) )
                         {
                             // Only notify the connection node if this client was previously inside the cell.
-                            if ( UReplicationGraphNode_ConnectionDormancyNode* connectionDormancyNode = dormancyNode->GetExistingConnectionNode( Params ) )
+                            if ( auto connectionDormancyNode = dormancyNode->GetExistingConnectionNode( Params ) )
                                 connectionDormancyNode->NotifyActorDormancyFlush( actor );
                         }
                     }

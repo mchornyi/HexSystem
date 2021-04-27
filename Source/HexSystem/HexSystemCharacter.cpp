@@ -1,6 +1,8 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "HexSystemCharacter.h"
+
+#include "CommonCVars.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -60,6 +62,22 @@ AHexSystemCharacter::AHexSystemCharacter()
     //Initialize fire rate
     FireRate = 0.25f;
     bIsFiringWeapon = false;
+}
+
+// Called every frame
+void AHexSystemCharacter::Tick( float DeltaTime )
+{
+	Super::Tick( DeltaTime );
+
+	//if( !HasAuthority() )
+	{
+		const auto value = CVar_DebugEnableFlushingForDormantActor.GetValueOnGameThread( );
+		if ( Global_DebugEnableFlushingForDormantActor != value )
+		{
+			ServerRPCEnableFlushing( CVar_DebugEnableFlushingForDormantActor.GetValueOnGameThread( ) );
+			Global_DebugEnableFlushingForDormantActor = value;
+		}
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -242,4 +260,10 @@ void AHexSystemCharacter::HandleFire_Implementation( )
     spawnParameters.Owner = this;
 
     AHSProjectile* spawnedProjectile = GetWorld( )->SpawnActor<AHSProjectile>( spawnLocation, spawnRotation, spawnParameters );
+}
+
+void AHexSystemCharacter::ServerRPCEnableFlushing_Implementation( bool value )
+{
+	Global_DebugEnableFlushingForDormantActor = value;
+	CVar_DebugEnableFlushingForDormantActor->Set( value );
 }

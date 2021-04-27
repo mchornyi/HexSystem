@@ -1,5 +1,7 @@
 #include "HexCellNode.h"
+
 #include "../CommonCVars.h"
+
 
 using namespace hexsystem;
 

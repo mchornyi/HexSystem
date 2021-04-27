@@ -18,10 +18,16 @@ int Global_WorldHexRingsNum = 1;
 float Global_WorldHexSize = 200.0f;
 const float Global_NetCullDistanceHexRepActor = 1000.0f;
 const uint32 Global_RepActorsNumPerHex = 10000;
-bool Global_DebugEnableFlushForDormantActor = false;
+bool Global_DebugEnableFlushingForDormantActor = false;
 
 TAutoConsoleVariable<bool> CVar_DebugShowInfoForHexRepActor(
     TEXT( "hex.Debug.ShowInfoForHexRepActor" ),
     true,
     TEXT( "Show debug info of AHexReplicatorDebugActor." ),
+    ECVF_Default );
+
+TAutoConsoleVariable<bool> CVar_DebugEnableFlushingForDormantActor(
+    TEXT( "hex.Debug.EnableFlushingForDormantActor" ),
+    false,
+    TEXT( "Enable flushing of AHexReplicatorDebugDormantActor." ),
     ECVF_Default );

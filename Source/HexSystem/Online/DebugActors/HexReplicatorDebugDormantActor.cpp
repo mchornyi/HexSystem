@@ -35,7 +35,7 @@ void AHexReplicatorDebugDormantActor::Tick(float DeltaTime)
     {
         OnlineProperty += 0.001f;
 
-        if ( Global_DebugEnableFlushForDormantActor )
+        if ( Global_DebugEnableFlushingForDormantActor )
             FlushNetDormancy( );
     }
     else
