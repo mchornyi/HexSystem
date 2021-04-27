@@ -274,11 +274,12 @@ namespace hexsystem
             maxRing = FMath::Clamp( maxRing, ( uint16 )0, ( uint16 )100 );
 
             TArray<FHex> result;
+            result.Reserve( 100 );
 
             const FHex hexOrigin = HexRound( PixelToHex( layout, originLoc ) );
             const uint16 distToHexZero = HexDistance( {}, hexOrigin );
             if ( distToHexZero <= maxDist )
-                result.AddUnique( hexOrigin );
+                result.Add( hexOrigin );
 
             bool mustStopSearching = false; // If none of the hex gets covered in the ring
             for ( uint16 i = 1; i <= maxRing && !mustStopSearching; ++i )
@@ -294,7 +295,7 @@ namespace hexsystem
                     const float distToOriginSq = ( hexLocation - originLoc ).SizeSquared( );
                     if ( distToOriginSq <= cullDist * cullDist && hexDistToHexZero <= maxDist )
                     {
-                        result.AddUnique( hex );
+                        result.Add( hex );
                         mustStopSearching = false;
                         continue;
                     }
@@ -305,7 +306,7 @@ namespace hexsystem
                     const FHex hexCovered = HexRound( PixelToHex( layout, hexCoveredLoc ) );
                     if ( hexCovered == hex && hexDistToHexZero <= maxDist )
                     {
-                        result.AddUnique( hex );
+                        result.Add( hex );
                         mustStopSearching = false;
                     }
                 }
