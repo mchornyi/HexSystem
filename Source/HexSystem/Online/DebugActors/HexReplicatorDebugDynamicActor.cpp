@@ -5,7 +5,9 @@
 
 #include "Net/UnrealNetwork.h"
 #include "DrawDebugHelpers.h"
-#include "CommonCVars.h"
+#include "../../CommonCVars.h"
+
+DECLARE_LOG_CATEGORY_EXTERN( HexTrace, Log, All );
 
 // Sets default values
 AHexReplicatorDebugDynamicActor::AHexReplicatorDebugDynamicActor( )
@@ -16,11 +18,11 @@ AHexReplicatorDebugDynamicActor::AHexReplicatorDebugDynamicActor( )
     // Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
     PrimaryActorTick.bCanEverTick = true;
 
-    SetReplicates( true );
+    bReplicates = true;
     SetReplicateMovement( true );
 
     NetCullDistanceSquared = Global_NetCullDistanceHexRepActor * Global_NetCullDistanceHexRepActor;
-    NetUpdateFrequency = 10;
+    NetUpdateFrequency = 100;
 }
 
 // Called when the game starts or when spawned
@@ -37,7 +39,7 @@ void AHexReplicatorDebugDynamicActor::Tick( float DeltaTime )
     Super::Tick( DeltaTime );
 
     //Server-specific functionality
-    if ( GetLocalRole( ) == ROLE_Authority )
+    if ( HasAuthority() )
     {
         OnlineProperty += 0.001f;
 
@@ -73,9 +75,9 @@ void AHexReplicatorDebugDynamicActor::GetLifetimeReplicatedProps( TArray <FLifet
 
 void AHexReplicatorDebugDynamicActor::OnRep_OnlineProperty( )
 {
-    if ( CVar_ShowDebugInfoForHexRepActor.GetValueOnGameThread() )
+    if ( CVar_DebugShowInfoForHexRepActor.GetValueOnGameThread() )
     {
-        auto str = FString::Printf( TEXT( "Property1=%.2f" ), OnlineProperty );
+        auto str = FString::Printf( TEXT( "RepValue=%.2f" ), OnlineProperty );
         DrawDebugString( GetWorld( ), { 0.0f, 0.0f, 0.0f }, str, this, FColor::Green, 0.1f, false, 1.2f );
     }
 }

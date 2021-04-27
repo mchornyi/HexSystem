@@ -56,7 +56,7 @@ AHSProjectile::AHSProjectile()
     Damage = 10.0f;
 
     //Registering the Projectile Impact function on a Hit event.
-    if ( GetLocalRole( ) == ROLE_Authority )
+    if ( HasAuthority() )
     {
         SphereComponent->OnComponentHit.AddDynamic( this, &AHSProjectile::OnProjectileImpact );
     }

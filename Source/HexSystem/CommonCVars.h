@@ -4,5 +4,13 @@
 
 extern int Global_WorldHexRingsNum;
 extern float Global_WorldHexSize;
-extern float Global_NetCullDistanceHexRepActor;
-extern TAutoConsoleVariable<bool> CVar_ShowDebugInfoForHexRepActor;
+extern const float Global_NetCullDistanceHexRepActor;
+extern const uint32 Global_RepActorsNumPerHex;
+
+extern bool Global_DebugEnableFlushForDormantActor;
+
+extern TAutoConsoleVariable<bool> CVar_DebugShowInfoForHexRepActor;
+
+//extern FAutoConsoleCommand CCmdHexEnableFlushForDormantActor;
+
+DECLARE_LOG_CATEGORY_EXTERN( LogHexRepGraph, Log, All );

@@ -2,6 +2,7 @@
 
 
 #include "HexReplicationGraph.h"
+
 #if 1
 #include "Engine/LevelStreaming.h"
 #include "EngineUtils.h"
@@ -13,9 +14,10 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "Engine/LevelScriptActor.h"
-#include "HexSystemCharacter.h"
-#include "HexReplicatorDebugActor.h"
-#include "HexReplicatorDebugDynamicActor.h"
+#include "../HexSystemCharacter.h"
+#include "DebugActors/HexReplicatorDebugActor.h"
+#include "DebugActors/HexReplicatorDebugDynamicActor.h"
+#include "DebugActors/HexReplicatorDebugDormantActor.h"
 
 #if WITH_GAMEPLAY_DEBUGGER
 #include "GameplayDebuggerCategoryReplicator.h"
@@ -128,6 +130,7 @@ void UHexReplicationGraph::InitGlobalActorClassSettings( )
     //AddInfo( AShooterPickup::StaticClass( ), EClassRepNodeMapping::Spatialize_Static );		// Spatialized and never moves. Routes to GridNode.
     AddInfo( AHexReplicatorDebugActor::StaticClass( ), EClassRepNodeMapping::Spatialize_Static );		// Spatialized and never moves. Routes to GridNode.
     AddInfo( AHexReplicatorDebugDynamicActor::StaticClass( ), EClassRepNodeMapping::Spatialize_Dynamic );
+    AddInfo( AHexReplicatorDebugDormantActor::StaticClass( ), EClassRepNodeMapping::Spatialize_Dormancy );
 
 #if WITH_GAMEPLAY_DEBUGGER
     AddInfo( AGameplayDebuggerCategoryReplicator::StaticClass( ), EClassRepNodeMapping::NotRouted );				// Replicated via UHexReplicationGraphNode_AlwaysRelevant_ForConnection
@@ -306,7 +309,10 @@ void UHexReplicationGraph::InitGlobalGraphNodes( )
     //	Spatial Actors
     // -----------------------------------------------
 
-    GridNode = CreateNewNode<UReplicationGraphNode_HexSpatialization2D>( );
+    //GridNode = CreateNewNode<UReplicationGraphNode_HexSpatialization2D>( );
+    GridNode = CreateNewNode<UReplicationGraphNode_GridSpatialization2D>( );
+    GridNode->CellSize = CVar_ShooterRepGraph_CellSize;
+    GridNode->SpatialBias = FVector2D( CVar_ShooterRepGraph_SpatialBiasX, CVar_ShooterRepGraph_SpatialBiasY );
 
     if ( CVar_ShooterRepGraph_DisableSpatialRebuilds )
     {

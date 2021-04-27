@@ -1,5 +1,6 @@
 #include "Misc/AutomationTest.h"
-#include "../HexReplicationNodes.h"
+#include "../Online/HexCellNode.h"
+#include "../Online/HexSpatialization2DNode.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST( FHexReplicationGraphTest, "HexReplicationGraphTests", EAutomationTestFlags::EditorContext | EAutomationTestFlags::SmokeFilter );
 

@@ -183,7 +183,7 @@ void AHexSystemCharacter::OnHealthUpdate( )
 	}
 
 	//Server-specific functionality
-	if ( GetLocalRole( ) == ROLE_Authority )
+	if ( HasAuthority() )
 	{
 		FString healthMessage = FString::Printf( TEXT( "%s now has %f health remaining." ), *GetFName( ).ToString( ), CurrentHealth );
 		GEngine->AddOnScreenDebugMessage( -1, 5.f, FColor::Blue, healthMessage );
@@ -202,7 +202,7 @@ void AHexSystemCharacter::OnRep_CurrentHealth( )
 
 void AHexSystemCharacter::SetCurrentHealth( float healthValue )
 {
-	if ( GetLocalRole( ) == ROLE_Authority )
+	if ( HasAuthority() )
 	{
 		CurrentHealth = FMath::Clamp( healthValue, 0.f, MaxHealth );
 		OnHealthUpdate( );

@@ -4,7 +4,7 @@
 
 #include "DrawDebugHelpers.h"
 #include "GameFramework/Character.h"
-#include "HexReplicatorDebugActor.h"
+#include "Online/DebugActors/HexReplicatorDebugActor.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/AssetManager.h"
 #include "CommonCVars.h"
@@ -160,6 +160,19 @@ void AHexWorld::Tick( float DeltaTime )
 #endif
 }
 
+void AHexWorld::PostLoad( )
+{
+    Super::PostLoad( );
+
+    Global_WorldHexRingsNum = HexRingsNum;
+    Global_WorldHexSize = HexLayout.size.X;
+
+    //TODO: Doesn't work for Blueprints!
+    //TArray<AActor*> foundActors;
+    //UGameplayStatics::GetAllActorsOfClass( GetWorld( ), AHexReplicatorDebugActor::StaticClass( ), foundActors );
+    //Global_RepActorsNum = foundActors.Num();
+}
+
 //////////////////////////////////////////////////////////////////////////
 /// WITH_EDITOR ///////////////////////////////////////////////////
 #if WITH_EDITOR
@@ -269,7 +282,8 @@ void AHexWorld::DebugGenerateRepActors( )
             }
         };
 
-        spawnBlueprintActor( );
+        //spawnBlueprintActor( );
+        spawnRawActor( );
 
         /*const FSoftObjectPath itemToStream( TEXT("Blueprint'/Game/ThirdPersonCPP/Blueprints/BP_HexReplicatorDebugActor.BP_HexReplicatorDebugActor'") );
         FStreamableManager& streamable = UAssetManager::Get( ).GetStreamableManager( );
@@ -277,14 +291,6 @@ void AHexWorld::DebugGenerateRepActors( )
         const auto* spawnedActor = Cast<UBlueprint>(req->GetLoadedAsset( ));
         GetWorld( )->SpawnActor<AHexReplicatorDebugActor>( spawnedActor->GeneratedClass, spawnLocation, spawnRotation, spawnParameters );*/
     }
-}
-
-void AHexWorld::PostLoad( )
-{
-    Super::PostLoad( );
-
-    Global_WorldHexRingsNum = HexRingsNum;
-    Global_WorldHexSize = HexLayout.size.X;
 }
 
 namespace
