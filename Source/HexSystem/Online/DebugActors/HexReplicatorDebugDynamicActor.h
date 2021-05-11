@@ -9,35 +9,40 @@
 UCLASS()
 class HEXSYSTEM_API AHexReplicatorDebugDynamicActor : public AActor
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
-	// Sets default values for this actor's properties
+    // Sets default values for this actor's properties
     AHexReplicatorDebugDynamicActor();
 
+    // Called every frame
+    virtual void Tick(float DeltaTime) override;
+
+    void SetOnlinePropertyPushModel(float value);
+
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
-public:
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-public:
-    /** The player's current health. When reduced to 0, they are considered dead.*/
-    UPROPERTY( ReplicatedUsing = OnRep_OnlineProperty )
-    float OnlineProperty;
+    // Called when the game starts or when spawned
+    virtual void BeginPlay() override;
 
 private:
     /** Property replication */
-    void GetLifetimeReplicatedProps( TArray<FLifetimeProperty>& OutLifetimeProps ) const override;
+    void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-    /** RepNotify for changes made to current health.*/
-    UFUNCTION( )
-    void OnRep_OnlineProperty( );
+    UFUNCTION()
+    void OnRep_OnlineProperty();
+
+    UFUNCTION()
+    void OnRep_OnlinePropertyPushModel();
+
 private:
+    /** The player's current health. When reduced to 0, they are considered dead.*/
+    UPROPERTY(ReplicatedUsing = OnRep_OnlineProperty)
+    float OnlineProperty;
 
-    FVector mMovingCenter;
-    float mMovingRadius;
-    float mMovingAngle;
+    UPROPERTY(ReplicatedUsing = OnRep_OnlinePropertyPushModel)
+    float OnlinePropertyPushModel;
+
+    FVector MovingCenter;
+    float MovingRadius;
+    float MovingAngle;
 };

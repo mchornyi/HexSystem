@@ -7,6 +7,7 @@
 
 #include "../../CommonCVars.h"
 #include "DrawDebugHelpers.h"
+#include "Net/Core/PushModel/PushModel.h"
 
 static bool bUpdatePropertyInTick = false;
 static bool bEnableFlushingInTick = false;
@@ -60,8 +61,11 @@ void AHexReplicatorDebugDormantActor::GetLifetimeReplicatedProps(TArray<FLifetim
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-    //Replicate current health.
     DOREPLIFETIME(AHexReplicatorDebugDormantActor, OnlineProperty);
+
+    FDoRepLifetimeParams SharedParams;
+	SharedParams.bIsPushBased = true;
+	DOREPLIFETIME_WITH_PARAMS_FAST(AHexReplicatorDebugDormantActor, OnlinePropertyPushModel, SharedParams);
 }
 
 void AHexReplicatorDebugDormantActor::OnRep_OnlineProperty()
@@ -73,6 +77,18 @@ void AHexReplicatorDebugDormantActor::OnRep_OnlineProperty()
         location.Z += 20;
         if(location.Z > 100) location.Z = 0;
         DrawDebugString(GetWorld(), location, str, this, FColor::Green, LableLifeTimeSec, false, 1.6f);
+    }
+}
+
+void AHexReplicatorDebugDormantActor::OnRep_OnlinePropertyPushModel( )
+{
+    if(GCVar_DebugShowInfoForHexRepActor.GetValueOnGameThread())
+    {
+        const auto str = FString::Printf(TEXT("AHexReplicatorDebugDormantActor::OnlinePropertyPushModel=%d"), OnlinePropertyPushModel);
+        static FVector location{20.0f, 0.0f, 0.0f};
+        location.Z += 20;
+        if(location.Z > 100) location.Z = 0;
+        DrawDebugString(GetWorld(), location, str, this, FColor::Orange, LableLifeTimeSec, false, 2.0f);
     }
 }
 
@@ -89,6 +105,8 @@ void AHexReplicatorDebugDormantActor::FlushNetDormancyOnce()
 
     OnlineProperty = ++value;
 
+    SetOnlinePropertyPushModel(OnlineProperty);
+
     UE_LOG(LogHexSystem, Display, TEXT("Server AHexReplicatorDebugDormantActor::OnlineProperty is %.4f"), OnlineProperty);
 
     FlushNetDormancyInternal();
@@ -97,4 +115,13 @@ void AHexReplicatorDebugDormantActor::FlushNetDormancyOnce()
 bool AHexReplicatorDebugDormantActor::GetNetDormancy(const FVector& ViewPos, const FVector& ViewDir, AActor* Viewer, AActor* ViewTarget, UActorChannel* InChannel, float Time, bool bLowBandwidth)
 {
     return GetNetDormancyDefaultValue;
+}
+
+void AHexReplicatorDebugDormantActor::SetOnlinePropertyPushModel(float value)
+{
+    if(OnlinePropertyPushModel == value)
+        return;
+
+    OnlinePropertyPushModel = value;
+    MARK_PROPERTY_DIRTY_FROM_NAME(AHexReplicatorDebugDormantActor, OnlinePropertyPushModel, this);
 }

@@ -12,6 +12,7 @@ public class HexSystem : ModuleRules
         {
             "Core"
             ,"CoreUObject"
+            ,"NetCore"
             ,"Engine"
             ,"InputCore"
             ,"HeadMountedDisplay"
