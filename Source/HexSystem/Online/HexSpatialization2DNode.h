@@ -115,21 +115,21 @@ private:
         bool bDormancyDriven;
     };
 
-    float mConnectionMaxZ = WORLD_MAX; // Connection locations have to be <= to this to pull from the grid
+    float ConnectionMaxZ = WORLD_MAX; // Connection locations have to be <= to this to pull from the grid
 
     // When enabled the RepGraph tells clients to destroy dormant dynamic actors when they go out of relevancy.
     bool bDestroyDormantDynamicActors = true;
 
     // Classmap of actor classes which CANNOT force a rebuild of the spatialization tree. They will be clamped instead. E.g, projectiles.
-    TClassMap<bool> mRebuildSpatialBlacklistMap;
+    TClassMap<bool> RebuildSpatialBlacklistMap;
 
-    TMap<FActorRepListType, FDynamicActorInfo> mDynamicSpatializedActors;
+    TMap<FActorRepListType, FDynamicActorInfo> DynamicSpatializedActors;
 
-    TMap<FActorRepListType, FStaticActorInfo> mStaticSpatializedActors;
+    TMap<FActorRepListType, FStaticActorInfo> StaticSpatializedActors;
 
-    TArray<FPendingStaticActors> mPendingStaticSpatializedActors;
+    TArray<FPendingStaticActors> PendingStaticSpatializedActors;
 
-    TMap<FHex, UReplicationGraphNode_HexCell*> mHexCells;
+    TMap<FHex, UReplicationGraphNode_HexCell*> HexCells;
 
     // Allow graph to override function for creating cell nodes in this grid.
     TFunction<UReplicationGraphNode_HexCell* ( UReplicationGraphNode_HexSpatialization2D* Parent )>	mCreateCellNodeOverrideFun;

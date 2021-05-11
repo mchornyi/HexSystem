@@ -1,0 +1,94 @@
+The num of actors is 200 * 168 
+[rep graph ON][actor rep ON][tick Full]
+Details:
+Name	PID	Status	User name	CPU	Memory (active private working set)	UAC virtualization
+HexSystem-Win64-Shipping.exe	10940	Running	m.chornyi	15 	301,832 K	Disabled
+Name	PID	Status	User name	CPU	Memory (active private working set)	UAC virtualization
+HexSystemServer-Win64-Shipping.exe	8980	Running	m.chornyi	10 	232,468 K	Disabled
+CPU:
+Image	PID	Description	Status	Threads	CPU	Average CPU
+HexSystem-Win64-Shipping.exe	10940	Third Person Game Template	Running	118	14	13.92
+Image	PID	Description	Status	Threads	CPU	Average CPU
+HexSystemServer-Win64-Shipping.exe	8980	Third Person Game Template	Running	23	9	8.60
+Notes:
+
+[rep graph OFF][actor rep ON][tick Full]
+Name	PID	Status	User name	CPU	Memory (active private working set)	UAC virtualization
+HexSystem-Win64-Shipping.exe	12132	Running	m.chornyi	19 	276,036 K	Disabled
+Name	PID	Status	User name	CPU	Memory (active private working set)	UAC virtualization
+HexSystemServer-Win64-Shipping.exe	8216	Running	m.chornyi	13 	207,800 K	Disabled
+CPU:
+Image	PID	Description	Status	Threads	CPU	Average CPU
+HexSystem-Win64-Shipping.exe	12132	Third Person Game Template	Running	116	19	19.03
+Image	PID	Description	Status	Threads	CPU	Average CPU
+HexSystemServer-Win64-Shipping.exe	8216	Third Person Game Template	Running	21	12	12.40
+Notes: Client stuck at the begining
+
+---------------------------------------------------------
+
+The num of actors is 50 * 168 
+[rep graph ON][actor rep ON][tick Full]
+Name	PID	Status	User name	CPU	Memory (active private working set)	UAC virtualization
+HexSystem-Win64-Shipping.exe	17860	Running	m.chornyi	18 	221,804 K	Disabled
+Name	PID	Status	User name	CPU	Memory (active private working set)	UAC virtualization
+HexSystemServer-Win64-Shipping.exe	18660	Running	m.chornyi	02 	129,572 K	Disabled
+CPU:
+Image	PID	Description	Status	Threads	CPU	Average CPU
+HexSystem-Win64-Shipping.exe	17860	Third Person Game Template	Running	121	20	18.66
+Image	PID	Description	Status	Threads	CPU	Average CPU
+HexSystemServer-Win64-Shipping.exe	18660	Third Person Game Template	Running	24	2	2.01
+[rep graph ON][actor rep ON][tick Full][2 Clients]
+Name	PID	Status	User name	CPU	Memory (active private working set)	UAC virtualization
+HexSystemServer-Win64-Shipping.exe	18660	Running	m.chornyi	03 	114,384 K	Disabled
+CPU:
+Image	PID	Description	Status	Threads	CPU	Average CPU
+HexSystemServer-Win64-Shipping.exe	18660	Third Person Game Template	Running	21	2	2.39
+
+
+[rep graph OFF][actor rep ON][tick Full]
+Name	PID	Status	User name	CPU	Memory (active private working set)	UAC virtualization
+HexSystem-Win64-Shipping.exe	14456	Running	m.chornyi	18 	222,568 K	Disabled
+Name	PID	Status	User name	CPU	Memory (active private working set)	UAC virtualization
+HexSystemServer-Win64-Shipping.exe	12168	Running	m.chornyi	03 	149,152 K	Disabled
+CPU:
+Image	PID	Description	Status	Threads	CPU	Average CPU
+HexSystem-Win64-Shipping.exe	14456	Third Person Game Template	Running	121	20	16.41
+Image	PID	Description	Status	Threads	CPU	Average CPU
+HexSystemServer-Win64-Shipping.exe	12168	Third Person Game Template	Running	23	3	2.77
+
+[rep graph OFF][actor rep ON][tick Full][2 Clients]
+Name	PID	Status	User name	CPU	Memory (active private working set)	UAC virtualization
+HexSystemServer-Win64-Shipping.exe	12168	Running	m.chornyi	04 	175,772 K	Disabled
+CPU:
+Image	PID	Description	Status	Threads	CPU	Average CPU
+HexSystemServer-Win64-Shipping.exe	12168	Third Person Game Template	Running	21	4	4.07
+
+---------------------------------------------------------
+
+The num of actors is 200 * 168 
+[rep graph ON][actor rep ON][tick Full]
+Name	PID	Status	User name	CPU	Memory (active private working set)	UAC virtualization
+HexSystem-Win64-Shipping.exe	16020	Running	m.chornyi	14 	294,016 K	Disabled
+Name	PID	Status	User name	CPU	Memory (active private working set)	UAC virtualization
+HexSystemServer-Win64-Shipping.exe	12848	Running	m.chornyi	08 	209,916 K	Disabled
+CPU:
+Image	PID	Description	Status	Threads	CPU	Average CPU
+HexSystem-Win64-Shipping.exe	16020	Third Person Game Template	Running	121	14	15.58
+Image	PID	Description	Status	Threads	CPU	Average CPU
+HexSystemServer-Win64-Shipping.exe	12848	Third Person Game Template	Running	24	9	8.42
+
+[rep graph ON][actor rep ON][tick Full][2 Clients]
+Name	PID	Status	User name	CPU	Memory (active private working set)	UAC virtualization
+HexSystemServer-Win64-Shipping.exe	12848	Running	m.chornyi	10 	262,304 K	Disabled
+CPU:
+Image	PID	Description	Status	Threads	CPU	Average CPU
+HexSystemServer-Win64-Shipping.exe	12848	Third Person Game Template	Running	21	11	10.62
+
+[rep graph OFF][actor rep ON][tick Full]
+Name	PID	Status	User name	CPU	Memory (active private working set)	UAC virtualization
+HexSystem-Win64-Shipping.exe	16780	Running	m.chornyi	21 	279,236 K	Disabled
+Name	PID	Status	User name	CPU	Memory (active private working set)	UAC virtualization
+HexSystemServer-Win64-Shipping.exe	19448	Running	m.chornyi	13 	192,832 K	Disabled
+CPU:
+Image	PID	Description	Status	Threads	CPU	Average CPU
+HexSystemServer-Win64-Shipping.exe	19448	Third Person Game Template	Running	23	12	12.42

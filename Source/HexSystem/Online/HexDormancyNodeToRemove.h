@@ -3,7 +3,7 @@
 #include "ReplicationGraph.h"
 //#include "ReplicationGraphTypes.h"
 
-#include "HexDormancyNode.generated.h"
+#include "HexDormancyNodeToRemove.generated.h"
 
 struct FHexStreamingLevelActorListCollection
 {
@@ -36,14 +36,14 @@ struct FHexStreamingLevelActorListCollection
 		FActorRepListRefView ReplicationActorList;
 	};
 
-	/** Lists for streaming levels. Actors that "came from" streaming levels go here. These lists are only returned if the connection has their streaming level loaded. */
-	static const int32 NumInlineAllocations = 4;
-	TArray<FStreamingLevelActors, TInlineAllocator<NumInlineAllocations>> StreamingLevelLists;
-
 	void CountBytes( FArchive& Ar )
 	{
 		StreamingLevelLists.CountBytes( Ar );
 	}
+
+	/** Lists for streaming levels. Actors that "came from" streaming levels go here. These lists are only returned if the connection has their streaming level loaded. */
+	static const int32 NumInlineAllocations = 4;
+	TArray<FStreamingLevelActors, TInlineAllocator<NumInlineAllocations>> StreamingLevelLists;
 };
 
 /** Removes dormant (on connection) actors from its rep lists */
@@ -68,7 +68,7 @@ private:
 	void ConditionalGatherDormantActorsForConnection( FActorRepListRefView& ConnectionRepList, const FConnectionGatherActorListParameters& Params, FActorRepListRefView* RemovedList );
 
 private:
-	int32 TrickleStartCounter = 10;
+	//int32 TrickleStartCounter = 10;
 
 	// Tracks actors we've removed in this per-connection node, so that we can restore them if the streaming level is unloaded and reloaded.
 	FHexStreamingLevelActorListCollection RemovedStreamingLevelActorListCollection;

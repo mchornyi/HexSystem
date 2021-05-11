@@ -1,9 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "HexReplicationGraph.h"
 
-#if 1
 #include "Engine/LevelStreaming.h"
 #include "EngineUtils.h"
 #include "CoreGlobals.h"
@@ -825,4 +822,3 @@ FAutoConsoleCommandWithWorldAndArgs ChangeFrequencyBucketsCmd( TEXT( "ShooterRep
         Node->SetNonStreamingCollectionSize( Buckets );
     }
 } ) );
-#endif

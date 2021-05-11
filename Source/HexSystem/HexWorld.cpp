@@ -9,8 +9,9 @@
 #include "Engine/AssetManager.h"
 #include "CommonCVars.h"
 
-DECLARE_LOG_CATEGORY_EXTERN( HexTrace, Log, All );
-DEFINE_LOG_CATEGORY( HexTrace );
+DECLARE_LOG_CATEGORY_EXTERN(HexTrace, Log, All);
+
+DEFINE_LOG_CATEGORY(HexTrace);
 
 using namespace hexsystem;
 
@@ -49,41 +50,27 @@ using namespace hexsystem;
 #if WITH_EDITOR
 namespace
 {
-    void DrawDebugHex( UWorld* inWorld, const FHexLayout& layout, const FHex& hex, float posZ, bool isActorInside, bool isHexVisible, bool isHexCovered );
-    void DrawCharacterInfo( UWorld* inWorld, float actorHexWorldPosZ );
+    void DrawDebugHex(UWorld* inWorld, const FHexLayout& layout, const FHex& hex, float posZ, bool isActorInside, bool isHexVisible, bool isHexCovered);
+    void DrawCharacterInfo(UWorld* inWorld, float actorHexWorldPosZ);
 
-    static TAutoConsoleVariable<int> CVar_HexDistVisibility(
-        TEXT( "hex.HexDistVisibility" ),
-        3,
-        TEXT( "Defines the distance of hex visibility in a context of hex model." ),
-        ECVF_Default );
+    static TAutoConsoleVariable<int> CVar_HexDistVisibility(TEXT("hex.HexDistVisibility"), 3,TEXT("Defines the distance of hex visibility in a context of hex model."),         ECVF_Default);
 
-    static TAutoConsoleVariable<float> CVar_LineThickness(
-        TEXT( "hex.LineThickness" ),
-        10.0f,
-        TEXT( "Defines the hex line thickness for debug visualizing." ),
-        ECVF_Default );
+    static TAutoConsoleVariable<float> CVar_LineThickness(TEXT("hex.LineThickness"), 10.0f, TEXT("Defines the hex line thickness for debug visualizing."), ECVF_Default);
 
-    static TAutoConsoleVariable<int> CVar_DebugActorNum(
-        TEXT( "hex.DebugActorNum" ),
-        1,
-        TEXT( "Defines the number per hex of actor for replication graph performance test." ),
-        ECVF_Default );
+    static TAutoConsoleVariable<int> CVar_DebugActorNum(TEXT("hex.Debug.ActorNumInHex"), 1, TEXT("Defines the number per hex of actor for replication graph performance test."),         ECVF_Default);
 
-    static TAutoConsoleVariable<int> CVar_DebugCharacterCullDist(
-        TEXT( "hex.DebugCharacterCullDist" ),
-        100,
-        TEXT( "Defines the radius of hex coverage." ),
-        ECVF_Default );
+    static TAutoConsoleVariable<int> CVar_DebugCharacterCullDist(TEXT("hex.Debug.CharacterCullDist"), 100, TEXT("Defines the radius of hex coverage."), ECVF_Default);
+
+    const float GDebugDrawLifeTimeSec = 1.0f;
 } // namespace
 #endif
 
 // Sets default values
-AHexWorld::AHexWorld( )
-    : HexLayout( LayoutPointy, FSize( 100, 100 ), FOrigin( 0, 0 ) )
-    , HexRingsNum( 6 )
-    , HexDistVisibility( 3 )
-    , bHexGenerateTrigger( false )
+AHexWorld::AHexWorld()
+    : HexLayout(LayoutPointy, FSize(100, 100), FOrigin(0, 0))
+      , HexRingsNum(6)
+      , HexDistVisibility(3)
+      , bHexGenerateTrigger(false)
 {
     // Set this actor to call Tick() every frame.  You can turn this off to
     // improve performance if you don't need it.
@@ -105,41 +92,46 @@ AHexWorld::AHexWorld( )
     //    HexRingsNum = FMath::Clamp<uint32>( CVar_WorldHexRingsNum.GetValueOnGameThread( ), 1, 100 );
     //} ) );
 
-    CVar_HexDistVisibility.AsVariable( )->SetOnChangedCallback(
-        FConsoleVariableDelegate::CreateLambda( [ this ]( IConsoleVariable* Variable )
-    {
-        UE_LOG( HexTrace, Display, TEXT( __FUNCTION__ ) );
-        HexDistVisibility = FMath::Clamp<uint32>( CVar_HexDistVisibility.GetValueOnGameThread( ), 1, 100 );;
-    } ) );
+    CVar_HexDistVisibility.AsVariable()->SetOnChangedCallback(
+        FConsoleVariableDelegate::CreateLambda([ this ](IConsoleVariable* Variable)
+        {
+            UE_LOG(HexTrace, Display, TEXT( __FUNCTION__ ));
+            HexDistVisibility = FMath::Clamp<uint32>(CVar_HexDistVisibility.GetValueOnGameThread(), 1, 100);;
+        }));
 #endif
-
 }
 
 // Called when the game starts or when spawned
-void AHexWorld::BeginPlay( )
+void AHexWorld::BeginPlay()
 {
-    Super::BeginPlay( );
+    Super::BeginPlay();
+
+    // Call RepeatingFunction once per second, starting two seconds from now.
+#if WITH_EDITOR
+    if(!mDebugDrawTimerHandler.IsValid())
+        GetWorldTimerManager().SetTimer(mDebugDrawTimerHandler, this, &AHexWorld::TickInEditor, GDebugDrawLifeTimeSec, true);
+#endif
 }
 
 #if WITH_EDITORONLY_DATA
-void AHexWorld::PostEditChangeProperty( FPropertyChangedEvent& e )
+void AHexWorld::PostEditChangeProperty(FPropertyChangedEvent& e)
 {
-    UE_LOG( HexTrace, Display, TEXT( __FUNCTION__ ) );
+    UE_LOG(HexTrace, Display, TEXT( __FUNCTION__ ));
 
-    const FName propertyName = ( e.Property != NULL ) ? e.Property->GetFName( ) : NAME_None;
-    if ( propertyName == GET_MEMBER_NAME_CHECKED( AHexWorld, bHexGenerateTrigger ) )
+    const FName propertyName = (e.Property != NULL) ? e.Property->GetFName() : NAME_None;
+    if(propertyName == GET_MEMBER_NAME_CHECKED(AHexWorld, bHexGenerateTrigger))
     {
-        if ( bHexGenerateTrigger == true )
+        if(bHexGenerateTrigger == true)
         {
-            Generate( );
+            Generate();
             bHexGenerateTrigger = false;
         }
     }
 
-    Super::PostEditChangeProperty( e );
+    Super::PostEditChangeProperty(e);
 
-    Global_WorldHexRingsNum = HexRingsNum;
-    Global_WorldHexSize = HexLayout.size.X;
+    GWorldHexRingsNum = HexRingsNum;
+    GWorldHexSize = HexLayout.size.X;
 }
 #endif
 
@@ -153,21 +145,22 @@ void AHexWorld::PostEditChangeProperty( FPropertyChangedEvent& e )
 //}
 
 // Called every frame
-void AHexWorld::Tick( float DeltaTime )
+void AHexWorld::Tick(float DeltaTime)
 {
-    Super::Tick( DeltaTime );
+    Super::Tick(DeltaTime);
 
 #if WITH_EDITOR
-    TickInEditor( DeltaTime );
+    if(!mDebugDrawTimerHandler.IsValid())
+        GetWorldTimerManager().SetTimer(mDebugDrawTimerHandler, this, &AHexWorld::TickInEditor, GDebugDrawLifeTimeSec, true);
 #endif
 }
 
-void AHexWorld::PostLoad( )
+void AHexWorld::PostLoad()
 {
-    Super::PostLoad( );
+    Super::PostLoad();
 
-    Global_WorldHexRingsNum = HexRingsNum;
-    Global_WorldHexSize = HexLayout.size.X;
+    GWorldHexRingsNum = HexRingsNum;
+    GWorldHexSize = HexLayout.size.X;
 
     //TODO: Doesn't work for Blueprints!
     //TArray<AActor*> foundActors;
@@ -179,113 +172,101 @@ void AHexWorld::PostLoad( )
 /// WITH_EDITOR ///////////////////////////////////////////////////
 #if WITH_EDITOR
 
-void AHexWorld::TickInEditor( float DeltaTime )
+void AHexWorld::TickInEditor()
 {
-    const FVector& actorWorlLoc = GetTransform( ).GetLocation( );
-    HexLayout.origin = { actorWorlLoc.X, actorWorlLoc.Y };
+    const FVector& actorWorlLoc = GetTransform().GetLocation();
+    HexLayout.origin = {actorWorlLoc.X, actorWorlLoc.Y};
 
     FHex currentHex;
     TArray<FHex> hexesCovered;
 
-    if ( APlayerController* playerController = UGameplayStatics::GetPlayerController( GetWorld( ), 0 ) )
+    if(APlayerController* playerController = UGameplayStatics::GetPlayerController(GetWorld(), 0))
     {
         FVector viewLocation;
-        FRotator viewRotation = playerController->GetControlRotation( );
-        playerController->GetPlayerViewPoint( viewLocation, viewRotation );
+        FRotator viewRotation = playerController->GetControlRotation();
+        playerController->GetPlayerViewPoint(viewLocation, viewRotation);
 
-        const FVector2D characterLoc( viewLocation );
-        currentHex = FHexModel::HexRound( FHexModel::PixelToHex( HexLayout, characterLoc ) );
-        hexesCovered = FHexModel::HexCoverage( HexLayout, characterLoc, CVar_DebugCharacterCullDist.GetValueOnGameThread( ), HexRingsNum );
+        const FVector2D characterLoc(viewLocation);
+        currentHex = FHexModel::HexRound(FHexModel::PixelToHex(HexLayout, characterLoc));
+        hexesCovered = FHexModel::HexCoverage(HexLayout, characterLoc, CVar_DebugCharacterCullDist.GetValueOnGameThread(), HexRingsNum);
     }
 
-    for ( const auto& hex : HexMap )
+    for(const auto& hex : HexMap)
     {
-        const bool isActorInside = ( hex == currentHex );
+        const bool isActorInside = (hex == currentHex);
         const bool isHexVisible =
-            FHexModel::HexDistance( hex, currentHex ) <= HexDistVisibility;
+            FHexModel::HexDistance(hex, currentHex) <= HexDistVisibility;
 
-        const bool isHexCovered = hexesCovered.Contains( hex );
+        const bool isHexCovered = hexesCovered.Contains(hex);
 
-        DrawDebugHex( GetWorld( ), HexLayout, hex, actorWorlLoc.Z, isActorInside, isHexVisible, isHexCovered );
+        DrawDebugHex(GetWorld(), HexLayout, hex, actorWorlLoc.Z, isActorInside, isHexVisible, isHexCovered);
     }
 
-    DrawCharacterInfo( GetWorld( ), GetActorLocation( ).Z );
-
-    // This is placed here because Engine calls obj construction twice even though
-    // there is only one copy.
-    static FAutoConsoleCommand CCmdRenderDocCaptureFrame =
-        FAutoConsoleCommand( TEXT( "hex.DebugGenerateRepActors" ),
-                             TEXT( "Generates a lot of HexReplicatorDebugActor to "
-                                   "test CPU performance for network." ),
-                             FConsoleCommandDelegate::CreateLambda(
-                                 [ this ]( )
-    {
-        DebugGenerateRepActors( );
-    } ) );
+    DrawCharacterInfo(GetWorld(), GetActorLocation().Z);
 }
 
-void AHexWorld::Generate( )
+void AHexWorld::Generate()
 {
-    UE_LOG( HexTrace, Display, TEXT( __FUNCTION__ ) );
+    UE_LOG(HexTrace, Display, TEXT( __FUNCTION__ ));
 
-    if ( HexRingsNum == HexMap.Num( ) )
+    if(HexRingsNum == HexMap.Num())
     {
         return;
     }
 
-    FHexModel::GenerateHexMap( HexMap, HexRingsNum );
+    FHexModel::GenerateHexMap(HexMap, HexRingsNum);
 }
 
-bool AHexWorld::ShouldTickIfViewportsOnly( ) const
+bool AHexWorld::ShouldTickIfViewportsOnly() const
 {
     return true;
 }
 
-void AHexWorld::DebugGenerateRepActors( )
+void AHexWorld::DebugGenerateRepActors()
 {
-    UE_LOG( HexTrace, Display, TEXT( __FUNCTION__ ) );
+    UE_LOG(HexTrace, Display, TEXT( __FUNCTION__ ));
 
-    for ( TObjectIterator<AHexReplicatorDebugActor> itr; itr; ++itr )
-        ( *itr )->Destroy( );
+    for(TObjectIterator<AHexReplicatorDebugActor> itr; itr; ++itr)
+        (*itr)->Destroy();
 
-    for ( const auto& hex : HexMap )
+    for(const auto& hex : HexMap)
     {
-        FVector spawnLocation( hexsystem::FHexModel::HexToPixel( HexLayout, hex ), 0.0f );
-        FRotator spawnRotation( 0.0f, 0.0f, 0.0f );
+        FVector spawnLocation(hexsystem::FHexModel::HexToPixel(HexLayout, hex), 0.0f);
+        FRotator spawnRotation(0.0f, 0.0f, 0.0f);
 
         FActorSpawnParameters spawnParameters;
-        spawnParameters.Instigator = GetInstigator( );
+        spawnParameters.Instigator = GetInstigator();
         spawnParameters.Owner = this;
 
-        auto spawnRawActor = [ & ]( )
+        auto spawnRawActor = [ & ]()
         {
-            const auto debugActorNum = FMath::Clamp( CVar_DebugActorNum.GetValueOnGameThread( ), 0, 1000 );
-            for ( int i = 0; i < debugActorNum; ++i )
+            const auto debugActorNum = FMath::Clamp(CVar_DebugActorNum.GetValueOnGameThread(), 0, 1000);
+            for(int i = 0; i < debugActorNum; ++i)
             {
-                auto* spawnedActor = GetWorld( )->SpawnActor<AHexReplicatorDebugActor>( spawnLocation, spawnRotation, spawnParameters );
-                spawnedActor->GetRootComponent( )->AttachToComponent( GetRootComponent( ), FAttachmentTransformRules::KeepRelativeTransform );
-                spawnedActor->SetFolderPath( TEXT( "/Debug/HexReplicatorDebugActor" ) );
+                auto* spawnedActor = GetWorld()->SpawnActor<AHexReplicatorDebugActor>(spawnLocation, spawnRotation, spawnParameters);
+                spawnedActor->GetRootComponent()->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+                spawnedActor->SetFolderPath(TEXT("/Debug/HexReplicatorDebugActor"));
             }
         };
 
-        auto spawnBlueprintActor = [ & ]( )
+        auto spawnBlueprintActor = [ & ]()
         {
-            static auto SItemToStream = TSoftClassPtr<AHexReplicatorDebugActor>( FSoftObjectPath( TEXT( "/Game/ThirdPersonCPP/Blueprints/BP_HexReplicatorDebugActor.BP_HexReplicatorDebugActor_C" ) ) );
-            static auto* SStreamedActor = SItemToStream.LoadSynchronous( );
+            static auto SItemToStream = TSoftClassPtr<AHexReplicatorDebugActor>(FSoftObjectPath(TEXT("/Game/ThirdPersonCPP/Blueprints/BP_HexReplicatorDebugActor.BP_HexReplicatorDebugActor_C")));
+            static auto* SStreamedActor = SItemToStream.LoadSynchronous();
 
-            if ( SStreamedActor )
+            if(SStreamedActor)
             {
-                auto debugActorNum = FMath::Clamp( CVar_DebugActorNum.GetValueOnGameThread( ), 0, 1000 );
-                for ( int i = 0; i < debugActorNum; ++i )
+                auto debugActorNum = FMath::Clamp(CVar_DebugActorNum.GetValueOnGameThread(), 0, 1000);
+                for(int i = 0; i < debugActorNum; ++i)
                 {
-                    auto* spawnedActor = GetWorld( )->SpawnActor<AHexReplicatorDebugActor>( SStreamedActor, spawnLocation, spawnRotation, spawnParameters );
-                    spawnedActor->SetFolderPath( TEXT( "/Debug/HexReplicatorDebugActor" ) );
+                    auto* spawnedActor = GetWorld()->SpawnActor<AHexReplicatorDebugActor>(SStreamedActor, spawnLocation, spawnRotation, spawnParameters);
+                    spawnedActor->SetFolderPath(TEXT("/Debug/HexReplicatorDebugActor"));
                 }
             }
         };
 
         //spawnBlueprintActor( );
-        spawnRawActor( );
+        spawnRawActor();
 
         /*const FSoftObjectPath itemToStream( TEXT("Blueprint'/Game/ThirdPersonCPP/Blueprints/BP_HexReplicatorDebugActor.BP_HexReplicatorDebugActor'") );
         FStreamableManager& streamable = UAssetManager::Get( ).GetStreamableManager( );
@@ -297,41 +278,40 @@ void AHexWorld::DebugGenerateRepActors( )
 
 namespace
 {
-    void DrawDebugHex( UWorld* inWorld, const FHexLayout& layout, const FHex& hex, float posZ, bool isActorInside, bool isHexVisible, bool isHexCovered )
+    void DrawDebugHex(UWorld* inWorld, const FHexLayout& layout, const FHex& hex, float posZ, bool isActorInside, bool isHexVisible, bool isHexCovered)
     {
-        check( inWorld );
+        check(inWorld);
 
-        check( isHexVisible || !isActorInside );
+        check(isHexVisible || !isActorInside);
 
-        const TArray<FPoint> corners = FHexModel::PolygonCorners( layout, hex );
+        const TArray<FPoint> corners = FHexModel::PolygonCorners(layout, hex);
 
         posZ += isActorInside ? 3.0f : 0.0f;
 
-        FColor Color = isActorInside ? FColor( 0, 255, 0 ) : FColor( 255, 0, 0 );
-        if ( !isHexVisible )
+        FColor Color = isActorInside ? FColor(0, 255, 0) : FColor(255, 0, 0);
+        if(!isHexVisible)
         {
-            Color = FColor( 155, 158, 163 );
+            Color = FColor(155, 158, 163);
             posZ += 3.0f;
         }
 
-        if ( isHexCovered )
+        if(isHexCovered)
         {
-            Color = FColor( 235, 235, 52 );
+            Color = FColor(235, 235, 52);
             posZ += 3.0f;
         }
 
         static bool bPersistentLines = false;
-        static float LifeTime = 0.0f;
         static uint8 DepthPriority = 0;
-        const float Thickness = CVar_LineThickness.GetValueOnGameThread( );
+        const float Thickness = CVar_LineThickness.GetValueOnGameThread();
 
-        FVector LineStart( 0.0f, 0.0f, posZ );
-        FVector LineEnd( 0.0f, 0.0f, posZ );
+        FVector LineStart(0.0f, 0.0f, posZ);
+        FVector LineEnd(0.0f, 0.0f, posZ);
 
-        for ( int i = 0; i < corners.Num( ) - 1; ++i )
+        for(int i = 0; i < corners.Num() - 1; ++i)
         {
-            const FPoint& coner = corners[ i ];
-            const FPoint& conerNext = corners[ i + 1 ];
+            const FPoint& coner = corners[i];
+            const FPoint& conerNext = corners[i + 1];
 
             LineStart.X = coner.X;
             LineStart.Y = coner.Y;
@@ -339,11 +319,11 @@ namespace
             LineEnd.X = conerNext.X;
             LineEnd.Y = conerNext.Y;
 
-            DrawDebugLine( inWorld, LineStart, LineEnd, Color, bPersistentLines, LifeTime, DepthPriority, Thickness );
+            DrawDebugLine(inWorld, LineStart, LineEnd, Color, bPersistentLines, GDebugDrawLifeTimeSec, DepthPriority, Thickness);
         }
 
-        const FPoint& coner = corners[ corners.Num( ) - 1 ];
-        const FPoint& conerNext = corners[ 0 ];
+        const FPoint& coner = corners[corners.Num() - 1];
+        const FPoint& conerNext = corners[0];
 
         LineStart.X = coner.X;
         LineStart.Y = coner.Y;
@@ -351,29 +331,29 @@ namespace
         LineEnd.X = conerNext.X;
         LineEnd.Y = conerNext.Y;
 
-        DrawDebugLine( inWorld, LineStart, LineEnd, Color, bPersistentLines, LifeTime, DepthPriority, Thickness );
+        DrawDebugLine(inWorld, LineStart, LineEnd, Color, bPersistentLines, GDebugDrawLifeTimeSec, DepthPriority, Thickness);
     }
 
-    void DrawCharacterInfo( UWorld* inWorld, float actorHexWorldPosZ )
+    void DrawCharacterInfo(UWorld* inWorld, float actorHexWorldPosZ)
     {
-        check( inWorld );
+        check(inWorld);
 
-        APlayerController* playerController = UGameplayStatics::GetPlayerController( inWorld, 0 );
-        if ( !playerController )
+        APlayerController* playerController = UGameplayStatics::GetPlayerController(inWorld, 0);
+        if(!playerController)
             return;
 
         FVector viewLocation;
-        FRotator viewRotation = playerController->GetControlRotation( );
-        playerController->GetPlayerViewPoint( viewLocation, viewRotation );
+        FRotator viewRotation = playerController->GetControlRotation();
+        playerController->GetPlayerViewPoint(viewLocation, viewRotation);
 
         viewLocation.Z = actorHexWorldPosZ;
 
-        DrawDebugPoint( inWorld, viewLocation, 10.0f, FColor( 155, 0, 0 ), false, -1.0f, 100 );
+        DrawDebugPoint(inWorld, viewLocation, 10.0f, FColor(155, 0, 0), false, -1.0f, 100);
 
-        DrawCircle( inWorld, viewLocation,
-                    { 1, 0 , 0 }, { 0, 1, 0 },
-                    FColor::White, CVar_DebugCharacterCullDist.GetValueOnGameThread( ), 24,
-                    false, -1, SDPG_World, 2 );
+        DrawCircle(inWorld, viewLocation,
+                   {1, 0, 0}, {0, 1, 0},
+                   FColor::White, CVar_DebugCharacterCullDist.GetValueOnGameThread(), 24,
+                   false, -1, SDPG_World, 2);
     }
 } // namespace
 

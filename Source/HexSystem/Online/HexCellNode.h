@@ -1,13 +1,12 @@
 #pragma once
 
 #include "ReplicationGraph.h"
-#include "../HexModel.h"
 
-#include "HexDormancyNode.h"
+#include "../HexModel.h"
 
 #include "HexCellNode.generated.h"
 
-class UReplicationGraphNode_HexDormancyNode;
+//class UReplicationGraphNode_HexDormancyNode;
 
 UCLASS( )
 class HEXSYSTEM_API UReplicationGraphNode_HexCell : public UReplicationGraphNode_ActorList
@@ -40,9 +39,6 @@ public:
 
     void RemoveDynamicActor( const FNewReplicatedActorInfo& ActorInfo );
 
-    // Allow graph to override function for creating the dynamic node in the cell
-    TFunction<UReplicationGraphNode* ( UReplicationGraphNode_HexCell* Parent )> CreateDynamicNodeOverride;
-
     void SetHex( FHex hex )
     {
         check( mHex.IsZero( ) );
@@ -54,15 +50,7 @@ public:
         return mHex;
     }
 
-    UReplicationGraphNode_HexDormancyNode* GetDormancyNode( )
-    {
-        if ( DormancyNode != nullptr )
-            return DormancyNode;
-
-        DormancyNode = CreateChildNode<UReplicationGraphNode_HexDormancyNode>( );
-
-        return DormancyNode;
-    }
+    UReplicationGraphNode_DormancyNode* GetDormancyNode( );
 
 private:
 
@@ -70,25 +58,9 @@ private:
     UReplicationGraphNode* DynamicNode = nullptr;
 
     UPROPERTY( )
-    UReplicationGraphNode_HexDormancyNode* DormancyNode = nullptr;
+    UReplicationGraphNode_DormancyNode* DormancyNode = nullptr;
 
-    UReplicationGraphNode* GetDynamicNode( )
-    {
-        if ( DynamicNode != nullptr )
-            return DynamicNode;
-
-        if ( DynamicNode == nullptr )
-        {
-            if ( CreateDynamicNodeOverride )
-                DynamicNode = CreateDynamicNodeOverride( this );
-            else
-                DynamicNode = CreateChildNode<UReplicationGraphNode_ActorListFrequencyBuckets>( );
-        }
-
-        return DynamicNode;
-    }
-
-    void OnActorDormancyFlush( FActorRepListType Actor, FGlobalActorReplicationInfo& GlobalInfo, UReplicationGraphNode_DormancyNode* DormancyNode );
+    UReplicationGraphNode* GetDynamicNode( );
 
     void ConditionalCopyDormantActors( FActorRepListRefView& FromList, UReplicationGraphNode_DormancyNode* ToNode ) const;
     void OnStaticActorNetDormancyChange( FActorRepListType Actor, FGlobalActorReplicationInfo& GlobalInfo, ENetDormancy NewVlue, ENetDormancy OldValue );

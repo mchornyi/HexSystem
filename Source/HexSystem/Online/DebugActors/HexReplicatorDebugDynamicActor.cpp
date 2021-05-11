@@ -21,7 +21,7 @@ AHexReplicatorDebugDynamicActor::AHexReplicatorDebugDynamicActor( )
     bReplicates = true;
     SetReplicateMovement( true );
 
-    NetCullDistanceSquared = Global_NetCullDistanceHexRepActor * Global_NetCullDistanceHexRepActor;
+    NetCullDistanceSquared = GNetCullDistanceHexRepActor * GNetCullDistanceHexRepActor;
     NetUpdateFrequency = 100;
 }
 
@@ -59,7 +59,7 @@ void AHexReplicatorDebugDynamicActor::Tick( float DeltaTime )
     else
     {
         //if(GetActorLocation().X == 0)
-            DrawDebugSphere( GetWorld( ), GetActorLocation( ), Global_NetCullDistanceHexRepActor, 64, FColor::Blue, false, -1, 2);
+            DrawDebugSphere( GetWorld( ), GetActorLocation( ), GNetCullDistanceHexRepActor, 64, FColor::Blue, false, -1, 2);
     }
 }
 
@@ -75,7 +75,7 @@ void AHexReplicatorDebugDynamicActor::GetLifetimeReplicatedProps( TArray <FLifet
 
 void AHexReplicatorDebugDynamicActor::OnRep_OnlineProperty( )
 {
-    if ( CVar_DebugShowInfoForHexRepActor.GetValueOnGameThread() )
+    if ( GCVar_DebugShowInfoForHexRepActor.GetValueOnGameThread() )
     {
         auto str = FString::Printf( TEXT( "RepValue=%.2f" ), OnlineProperty );
         DrawDebugString( GetWorld( ), { 0.0f, 0.0f, 0.0f }, str, this, FColor::Green, 0.1f, false, 1.2f );

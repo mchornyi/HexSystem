@@ -1,4 +1,4 @@
-#include "HexDormancyNode.h"
+#include "HexDormancyNodeToRemove.h"
 #include "../CommonCVars.h"
 
 static int32 CVar_RepGraph_DormancyNode_DisconnectedBehavior = 1;
@@ -6,7 +6,7 @@ static FAutoConsoleVariableRef CVarRepGraphDormancyNodeDisconnectedBehavior(
     TEXT("hex.RepGraph.DormancyNodeDisconnectedBehavior"), CVar_RepGraph_DormancyNode_DisconnectedBehavior, TEXT(
         "This changes how the dormancy node deals with disconnected clients. 0 = ignore. 1 = skip the disconnected client nodes. 2 = lazily destroy the disconnected client nodes"),
     ECVF_Default);
-
+#pragma region UReplicationGraphNode_HexConnectionDormancyNode
 UReplicationGraphNode_HexConnectionDormancyNode::UReplicationGraphNode_HexConnectionDormancyNode()
 {
     FlushedActorList.PrepareForWrite();
@@ -19,8 +19,7 @@ void UReplicationGraphNode_HexConnectionDormancyNode::GatherActorListsForConnect
 
     for(int32 idx = StreamingLevelCollection.StreamingLevelLists.Num() - 1; idx >= 0; --idx)
     {
-        FStreamingLevelActorListCollection::FStreamingLevelActors& StreamingList = StreamingLevelCollection.
-            StreamingLevelLists[idx];
+        FStreamingLevelActorListCollection::FStreamingLevelActors& StreamingList = StreamingLevelCollection.StreamingLevelLists[idx];
         if(StreamingList.ReplicationActorList.Num() <= 0)
         {
             StreamingLevelCollection.StreamingLevelLists.RemoveAtSwap(idx, 1, false);
@@ -29,24 +28,20 @@ void UReplicationGraphNode_HexConnectionDormancyNode::GatherActorListsForConnect
 
         if(Params.CheckClientVisibilityForLevel(StreamingList.StreamingLevelName))
         {
-            FHexStreamingLevelActorListCollection::FStreamingLevelActors* RemoveList =
-                RemovedStreamingLevelActorListCollection.StreamingLevelLists.
-                                                         FindByKey(StreamingList.StreamingLevelName);
+            FHexStreamingLevelActorListCollection::FStreamingLevelActors* RemoveList = RemovedStreamingLevelActorListCollection.StreamingLevelLists.FindByKey(StreamingList.StreamingLevelName);
             if(!RemoveList)
             {
-                RemoveList = &RemovedStreamingLevelActorListCollection.StreamingLevelLists.Emplace_GetRef(
-                    StreamingList.StreamingLevelName);
-                Params.ConnectionManager.OnClientVisibleLevelNameAddMap.FindOrAdd(StreamingList.StreamingLevelName).
-                       AddUObject(this, &UReplicationGraphNode_HexConnectionDormancyNode::OnClientVisibleLevelNameAdd);
+                RemoveList = &RemovedStreamingLevelActorListCollection.StreamingLevelLists.Emplace_GetRef(StreamingList.StreamingLevelName);
+
+                Params.ConnectionManager.OnClientVisibleLevelNameAddMap.FindOrAdd(StreamingList.StreamingLevelName).AddUObject(
+                    this, &UReplicationGraphNode_HexConnectionDormancyNode::OnClientVisibleLevelNameAdd);
             }
 
-            ConditionalGatherDormantActorsForConnection(StreamingList.ReplicationActorList, Params,
-                                                        &RemoveList->ReplicationActorList);
+            ConditionalGatherDormantActorsForConnection(StreamingList.ReplicationActorList, Params, &RemoveList->ReplicationActorList);
         }
         else
         {
-            UE_LOG(LogHexRepGraph, Verbose, TEXT( "Level Not Loaded %s. (Client has %d levels loaded)" ),
-                   *StreamingList.StreamingLevelName.ToString( ), Params.ClientVisibleLevelNamesRef.Num( ));
+            UE_LOG(LogHexRepGraph, Verbose, TEXT( "Level Not Loaded %s. (Client has %d levels loaded)" ), *StreamingList.StreamingLevelName.ToString( ), Params.ClientVisibleLevelNamesRef.Num( ));
         }
     }
 }
@@ -98,14 +93,15 @@ void UReplicationGraphNode_HexConnectionDormancyNode::ConditionalGatherDormantAc
     //    DormantActorList.RemoveAtSwap( idx );
     //}
 
+    DormantActorList.Reset();//TODO...remove it
     if(DormantActorList.Num() > 0)
     {
         Params.OutGatheredReplicationLists.AddReplicationActorList(DormantActorList);
 
-        if(TrickleStartCounter > 0)
-        {
-            TrickleStartCounter--;
-        }
+        //if(TrickleStartCounter > 0)
+        //{
+        //    TrickleStartCounter--;
+        //}
     }
 }
 
@@ -141,8 +137,8 @@ void UReplicationGraphNode_HexConnectionDormancyNode::NotifyActorDormancyFlush(F
     }
     else
     {
-        FStreamingLevelActorListCollection::FStreamingLevelActors* Item = StreamingLevelCollection.StreamingLevelLists.
-            FindByKey(ActorInfo.StreamingLevelName);
+        FStreamingLevelActorListCollection::FStreamingLevelActors* Item = StreamingLevelCollection.StreamingLevelLists.FindByKey(ActorInfo.StreamingLevelName);
+
         if(!Item)
         {
             Item = &StreamingLevelCollection.StreamingLevelLists.Emplace_GetRef(ActorInfo.StreamingLevelName);
@@ -154,8 +150,7 @@ void UReplicationGraphNode_HexConnectionDormancyNode::NotifyActorDormancyFlush(F
         }
 
         // Remove from RemoveList
-        FHexStreamingLevelActorListCollection::FStreamingLevelActors* RemoveList =
-            RemovedStreamingLevelActorListCollection.StreamingLevelLists.FindByKey(ActorInfo.StreamingLevelName);
+        FHexStreamingLevelActorListCollection::FStreamingLevelActors* RemoveList = RemovedStreamingLevelActorListCollection.StreamingLevelLists.FindByKey(ActorInfo.StreamingLevelName);
         if(RemoveList)
         {
             RemoveList->ReplicationActorList.PrepareForWrite();
@@ -166,23 +161,17 @@ void UReplicationGraphNode_HexConnectionDormancyNode::NotifyActorDormancyFlush(F
 
 void UReplicationGraphNode_HexConnectionDormancyNode::OnClientVisibleLevelNameAdd(FName LevelName, UWorld* World)
 {
-    FHexStreamingLevelActorListCollection::FStreamingLevelActors* RemoveList = RemovedStreamingLevelActorListCollection.
-                                                                               StreamingLevelLists.FindByKey(LevelName);
+    FHexStreamingLevelActorListCollection::FStreamingLevelActors* RemoveList = RemovedStreamingLevelActorListCollection.StreamingLevelLists.FindByKey(LevelName);
     if(!RemoveList)
     {
-        UE_LOG(LogHexRepGraph, Warning,
-               TEXT(
-                   ":OnClientVisibleLevelNameAdd called on %s but there is no RemoveList. How did this get bound in the first place?. Level: %s"
-               ), *GetPathName( ), *LevelName.ToString( ));
+        UE_LOG(LogHexRepGraph, Warning, TEXT( ":OnClientVisibleLevelNameAdd called on %s but there is no RemoveList. How did this get bound in the first place?. Level: %s"), *GetPathName( ),
+               *LevelName.ToString( ));
         return;
     }
 
-    FStreamingLevelActorListCollection::FStreamingLevelActors* AddList = StreamingLevelCollection.StreamingLevelLists.
-        FindByKey(LevelName);
+    FStreamingLevelActorListCollection::FStreamingLevelActors* AddList = StreamingLevelCollection.StreamingLevelLists.FindByKey(LevelName);
     if(!AddList)
-    {
         AddList = &StreamingLevelCollection.StreamingLevelLists.Emplace_GetRef(LevelName);
-    }
 
     //UE_CLOG( CVar_RepGraph_LogNetDormancyDetails, LogHexRepGraph, Display, TEXT( "::OnClientVisibleLevelNameadd %s. LevelName: %s." ), *GetPathName( ), *LevelName.ToString( ) );
     //UE_CLOG( CVar_RepGraph_LogNetDormancyDetails, LogHexRepGraph, Display, TEXT( "    CurrentAddList: %s" ), *AddList->ReplicationActorList.BuildDebugString( ) );
@@ -195,16 +184,13 @@ void UReplicationGraphNode_HexConnectionDormancyNode::OnClientVisibleLevelNameAd
     RemoveList->ReplicationActorList.Reset();
 }
 
-bool UReplicationGraphNode_HexConnectionDormancyNode::NotifyRemoveNetworkActor(
-    const FNewReplicatedActorInfo& ActorInfo, bool WarnIfNotFound)
+bool UReplicationGraphNode_HexConnectionDormancyNode::NotifyRemoveNetworkActor(const FNewReplicatedActorInfo& ActorInfo, bool WarnIfNotFound)
 {
-    QUICK_SCOPE_CYCLE_COUNTER(ConnectionDormancyNode_NotifyRemoveNetworkActor);
+    QUICK_SCOPE_CYCLE_COUNTER(HexConnectionDormancyNode_NotifyRemoveNetworkActor);
 
     // Remove from active list by calling super
     if(Super::RemoveNetworkActorFast(ActorInfo))
-    {
         return true;
-    }
 
     // Not found in active list. We must check out RemovedActorList
     return RemovedStreamingLevelActorListCollection.RemoveActorFast(ActorInfo, this);
@@ -222,6 +208,7 @@ void UReplicationGraphNode_HexConnectionDormancyNode::OnPostReplicatePrioritizeL
     ReplicationActorList.Reset();
 }
 
+#pragma endregion UReplicationGraphNode_HexConnectionDormancyNode
 // --------------------------------------------------------------------------------------------------------------------------------------------
 #pragma region UReplicationGraphNode_HexDormancyNode
 float UReplicationGraphNode_HexDormancyNode::MaxZForConnection = WORLD_MAX;
@@ -237,15 +224,14 @@ void UReplicationGraphNode_HexDormancyNode::CallFunctionOnValidConnectionNodes(F
         Destroy = 2,
         // Destroy the nodes immediately (one time cpu hit)
     };
-    const DisconnectedClientNodeBehavior DisconnectedClientBehavior = (DisconnectedClientNodeBehavior)
-        CVar_RepGraph_DormancyNode_DisconnectedBehavior;
+    const DisconnectedClientNodeBehavior DisconnectedClientBehavior = (DisconnectedClientNodeBehavior)CVar_RepGraph_DormancyNode_DisconnectedBehavior;
 
     QUICK_SCOPE_CYCLE_COUNTER(UReplicationGraphNode_HexDormancyNode_ConnectionLoop);
     for(FConnectionDormancyNodeMap::TIterator It = ConnectionNodes.CreateIterator(); It; ++It)
     {
         const FRepGraphConnectionKey RepGraphConnection = It.Key();
-        const bool bIsActiveConnection = (DisconnectedClientBehavior == DisconnectedClientNodeBehavior::AlwaysValid) ||
-            (RepGraphConnection.ResolveObjectPtr() != nullptr);
+
+        const bool bIsActiveConnection = (DisconnectedClientBehavior == DisconnectedClientNodeBehavior::AlwaysValid) || (RepGraphConnection.ResolveObjectPtr() != nullptr);
         if(bIsActiveConnection)
         {
             Function(It.Value());
@@ -286,13 +272,13 @@ void UReplicationGraphNode_HexDormancyNode::NotifyResetAllNetworkActors()
     {
         ConnectionNode->NotifyResetAllNetworkActors();
     };
+
     CallFunctionOnValidConnectionNodes(ResetAllActorsFunction);
 }
 
-void UReplicationGraphNode_HexDormancyNode::AddDormantActor(const FNewReplicatedActorInfo& ActorInfo,
-                                                            FGlobalActorReplicationInfo& GlobalInfo)
+void UReplicationGraphNode_HexDormancyNode::AddDormantActor(const FNewReplicatedActorInfo& ActorInfo, FGlobalActorReplicationInfo& GlobalInfo)
 {
-    QUICK_SCOPE_CYCLE_COUNTER(DormancyNode_AddDormantActor);
+    QUICK_SCOPE_CYCLE_COUNTER(HexDormancyNode_AddDormantActor);
 
     Super::NotifyAddNetworkActor(ActorInfo);
 
@@ -303,6 +289,7 @@ void UReplicationGraphNode_HexDormancyNode::AddDormantActor(const FNewReplicated
         QUICK_SCOPE_CYCLE_COUNTER(ConnectionDormancyNode_NotifyAddNetworkActor);
         ConnectionNode->NotifyAddNetworkActor(ActorInfo);
     };
+
     CallFunctionOnValidConnectionNodes(AddActorFunction);
 
     // Tell us if this guy flushes net dormancy so we force him back on connection lists
@@ -312,7 +299,7 @@ void UReplicationGraphNode_HexDormancyNode::AddDormantActor(const FNewReplicated
 void UReplicationGraphNode_HexDormancyNode::RemoveDormantActor(const FNewReplicatedActorInfo& ActorInfo,
                                                                FGlobalActorReplicationInfo& ActorRepInfo)
 {
-    QUICK_SCOPE_CYCLE_COUNTER(DormancyNode_RemoveDormantActor);
+    QUICK_SCOPE_CYCLE_COUNTER(HexDormancyNode_RemoveDormantActor);
 
     //UE_CLOG( CVar_RepGraph_LogActorRemove > 0, LogHexRepGraph, Display, TEXT( "UReplicationGraphNode_HexDormancyNode::RemoveDormantActor %s on %s. (%d connection nodes). ChildNodes: %d" ), *GetNameSafe( ActorInfo.Actor ), *GetPathName( ), ConnectionNodes.Num( ), AllChildNodes.Num( ) );
 
@@ -328,53 +315,44 @@ void UReplicationGraphNode_HexDormancyNode::RemoveDormantActor(const FNewReplica
     CallFunctionOnValidConnectionNodes(RemoveActorFunction);
 }
 
-void UReplicationGraphNode_HexDormancyNode::GatherActorListsForConnection(
-    const FConnectionGatherActorListParameters& Params)
+void UReplicationGraphNode_HexDormancyNode::GatherActorListsForConnection(const FConnectionGatherActorListParameters& Params)
 {
     int32 NumViewersAboveMaxZ = 0;
     for(const FNetViewer& CurViewer : Params.Viewers)
     {
         if(CurViewer.ViewLocation.Z > MaxZForConnection)
-        {
             ++NumViewersAboveMaxZ;
-        }
     }
 
     // If we're above max on all viewers, don't gather actors.
     if(Params.Viewers.Num() <= NumViewersAboveMaxZ)
-    {
         return;
-    }
 
-    UReplicationGraphNode_HexConnectionDormancyNode* ConnectionNode = GetConnectionNode(Params);
-    ConnectionNode->GatherActorListsForConnection(Params);
+    GetConnectionNode(Params)->GatherActorListsForConnection(Params);
 }
 
-UReplicationGraphNode_HexConnectionDormancyNode* UReplicationGraphNode_HexDormancyNode::GetExistingConnectionNode(
-    const FConnectionGatherActorListParameters& Params)
+UReplicationGraphNode_HexConnectionDormancyNode* UReplicationGraphNode_HexDormancyNode::GetExistingConnectionNode(const FConnectionGatherActorListParameters& Params)
 {
-    UReplicationGraphNode_HexConnectionDormancyNode** ConnectionNodeItem = ConnectionNodes.Find(
-        FRepGraphConnectionKey(&Params.ConnectionManager));
-    return ConnectionNodeItem == nullptr ? nullptr : *ConnectionNodeItem;
+    const auto ConnectionNode = ConnectionNodes.Find(FRepGraphConnectionKey(&Params.ConnectionManager));
+    return ConnectionNode == nullptr ? nullptr : *ConnectionNode;
 }
 
-UReplicationGraphNode_HexConnectionDormancyNode* UReplicationGraphNode_HexDormancyNode::GetConnectionNode(
-    const FConnectionGatherActorListParameters& Params)
+UReplicationGraphNode_HexConnectionDormancyNode* UReplicationGraphNode_HexDormancyNode::GetConnectionNode(const FConnectionGatherActorListParameters& Params)
 {
-    FRepGraphConnectionKey RepGraphConnection(&Params.ConnectionManager);
-    UReplicationGraphNode_HexConnectionDormancyNode** NodePtrPtr = ConnectionNodes.Find(RepGraphConnection);
-    UReplicationGraphNode_HexConnectionDormancyNode* ConnectionNode = NodePtrPtr != nullptr ? *NodePtrPtr : nullptr;
+    const FRepGraphConnectionKey RepGraphConnection(&Params.ConnectionManager);
+    const auto NodePtrPtr = ConnectionNodes.Find(RepGraphConnection);
+    auto ConnectionNode = NodePtrPtr != nullptr ? *NodePtrPtr : nullptr;
 
     if(ConnectionNode == nullptr)
     {
-        // We dont have a per-connection node for this connection, so create one and copy over contents
+        // We don't have a per-connection node for this connection, so create one and copy over contents
         ConnectionNode = CreateChildNode<UReplicationGraphNode_HexConnectionDormancyNode>();
         ConnectionNodes.Add(RepGraphConnection) = ConnectionNode;
 
         // Copy our master lists to the connection node
         //ConnectionNode->DeepCopyActorListsFrom( this );
 
-        Params.ConnectionManager.OnPostReplicatePrioritizeLists.AddUObject( ConnectionNode, &UReplicationGraphNode_HexConnectionDormancyNode::OnPostReplicatePrioritizeLists );
+        Params.ConnectionManager.OnPostReplicatePrioritizeLists.AddUObject(ConnectionNode, &UReplicationGraphNode_HexConnectionDormancyNode::OnPostReplicatePrioritizeLists);
 
         //UE_CLOG( CVar_RepGraph_LogNetDormancyDetails > 0, LogHexRepGraph, Display, TEXT( "GRAPH_DORMANCY: First time seeing connection %s in node %s. Created ConnectionDormancyNode %s." ), *Params.ConnectionManager.GetName( ), *GetName( ), *ConnectionNode->GetName( ) );
     }
@@ -382,10 +360,9 @@ UReplicationGraphNode_HexConnectionDormancyNode* UReplicationGraphNode_HexDorman
     return ConnectionNode;
 }
 
-void UReplicationGraphNode_HexDormancyNode::OnActorDormancyFlush(FActorRepListType Actor,
-                                                                 FGlobalActorReplicationInfo& GlobalInfo)
+void UReplicationGraphNode_HexDormancyNode::OnActorDormancyFlush(FActorRepListType Actor, FGlobalActorReplicationInfo& GlobalInfo)
 {
-    QUICK_SCOPE_CYCLE_COUNTER(DormancyNode_OnActorDormancyFlush);
+    QUICK_SCOPE_CYCLE_COUNTER(HexDormancyNode_OnActorDormancyFlush);
 
     //if ( CVar_RepGraph_Verify )
     //{
@@ -411,44 +388,37 @@ void UReplicationGraphNode_HexDormancyNode::OnActorDormancyFlush(FActorRepListTy
     {
         ConnectionNode->NotifyActorDormancyFlush(Actor);
     };
+
     CallFunctionOnValidConnectionNodes(DormancyFlushFunction);
 }
 
-void UReplicationGraphNode_HexDormancyNode::ConditionalGatherDormantDynamicActors(
-    FActorRepListRefView& RepList, const FConnectionGatherActorListParameters& Params,
-    FActorRepListRefView* RemovedList, bool bEnforceReplistUniqueness)
+void UReplicationGraphNode_HexDormancyNode::ConditionalGatherDormantDynamicActors(FActorRepListRefView& RepList, const FConnectionGatherActorListParameters& Params, FActorRepListRefView* RemovedList, bool bEnforceReplistUniqueness)
 {
+    RepList.PrepareForWrite();
+
     for(FActorRepListType& Actor : ReplicationActorList)
     {
-        if(Actor && !Actor->IsNetStartupActor())
+        const bool bIsActorDynamic = Actor && !Actor->IsNetStartupActor();
+        if(!bIsActorDynamic)
+            continue;
+
+        FConnectionReplicationActorInfo* Info = Params.ConnectionManager.ActorInfoMap.Find(Actor);
+        if(!Info || !Info->bDormantOnConnection)
+            continue;
+
+        if(RemovedList && RemovedList->IsValid() && RemovedList->Contains(Actor))
+            continue;
+
+        // Prevent adding actors if we already have added them, this saves on grow operations.
+        if(bEnforceReplistUniqueness)
         {
-            if(FConnectionReplicationActorInfo* Info = Params.ConnectionManager.ActorInfoMap.Find(Actor))
-            {
-                if(Info->bDormantOnConnection)
-                {
-                    if(RemovedList && RemovedList->IsValid() && RemovedList->Contains(Actor))
-                    {
-                        continue;
-                    }
-
-                    // Prevent adding actors if we already have added them, this saves on grow operations.
-                    if(bEnforceReplistUniqueness)
-                    {
-                        if(Info->bGridSpatilization_AlreadyDormant)
-                        {
-                            continue;
-                        }
-                        else
-                        {
-                            Info->bGridSpatilization_AlreadyDormant = true;
-                        }
-                    }
-
-                    RepList.PrepareForWrite();
-                    RepList.ConditionalAdd(Actor);
-                }
-            }
+            if(Info->bGridSpatilization_AlreadyDormant)
+                continue;
+            else
+                Info->bGridSpatilization_AlreadyDormant = true;
         }
+
+        RepList.ConditionalAdd(Actor);
     }
 }
 
@@ -460,70 +430,67 @@ void FHexStreamingLevelActorListCollection::AddActor(const FNewReplicatedActorIn
 {
     FStreamingLevelActors* Item = StreamingLevelLists.FindByKey(ActorInfo.StreamingLevelName);
     if(!Item)
-    {
         Item = &StreamingLevelLists.Emplace_GetRef(ActorInfo.StreamingLevelName);
-    }
 
-    if(CVar_RepGraph_Verify)
-    {
-        ensureMsgf(Item->ReplicationActorList.Contains( ActorInfo.Actor ) == false,
-                   TEXT( "%s being added to %s twice! Streaming level: %s" ),
-                   *GetActorRepListTypeDebugString( ActorInfo.Actor ), *ActorInfo.StreamingLevelName.ToString( ));
-    }
+    //if(CVar_RepGraph_Verify)
+    //{
+    //    ensureMsgf(Item->ReplicationActorList.Contains( ActorInfo.Actor ) == false,
+    //               TEXT( "%s being added to %s twice! Streaming level: %s" ),
+    //               *GetActorRepListTypeDebugString( ActorInfo.Actor ), *ActorInfo.StreamingLevelName.ToString( ));
+    //}
 
     Item->ReplicationActorList.Add(ActorInfo.Actor);
 }
 
-bool FHexStreamingLevelActorListCollection::RemoveActor(const FNewReplicatedActorInfo& ActorInfo, bool bWarnIfNotFound,
-                                                        UReplicationGraphNode* Outer)
+bool FHexStreamingLevelActorListCollection::RemoveActor(const FNewReplicatedActorInfo& ActorInfo, bool bWarnIfNotFound, UReplicationGraphNode* Outer)
 {
     bool bRemovedSomething = false;
     for(FStreamingLevelActors& StreamingList : StreamingLevelLists)
     {
-        if(StreamingList.StreamingLevelName == ActorInfo.StreamingLevelName)
-        {
-            bRemovedSomething = StreamingList.ReplicationActorList.Remove(ActorInfo.Actor);
-            if(!bRemovedSomething && bWarnIfNotFound)
-            {
-                UE_LOG(LogHexRepGraph, Warning,
-                       TEXT( "Attempted to remove %s from list %s but it was not found. (StreamingLevelName == %s)" ),
-                       *GetActorRepListTypeDebugString( ActorInfo.Actor ), *GetPathNameSafe( Outer ),
-                       *ActorInfo.StreamingLevelName.ToString( ));
-            }
+        if(StreamingList.StreamingLevelName != ActorInfo.StreamingLevelName)
+            continue;
 
-            if(CVar_RepGraph_Verify)
-            {
-                ensureMsgf(StreamingList.ReplicationActorList.Contains( ActorInfo.Actor ) == false,
-                           TEXT( "Actor %s is still in %s after removal. Streaming Level: %s" ),
-                           *GetActorRepListTypeDebugString( ActorInfo.Actor ), *GetPathNameSafe( Outer ));
-            }
-            break;
+        bRemovedSomething = StreamingList.ReplicationActorList.Remove(ActorInfo.Actor);
+
+        if(!bRemovedSomething && bWarnIfNotFound)
+        {
+            UE_LOG(LogHexRepGraph, Warning,
+                   TEXT( "Attempted to remove %s from list %s but it was not found. (StreamingLevelName == %s)" ),
+                   *GetActorRepListTypeDebugString( ActorInfo.Actor ), *GetPathNameSafe( Outer ),
+                   *ActorInfo.StreamingLevelName.ToString( ));
         }
+
+        if(CVar_RepGraph_Verify)
+        {
+            ensureMsgf(StreamingList.ReplicationActorList.Contains( ActorInfo.Actor ) == false,
+                       TEXT( "Actor %s is still in %s after removal. Streaming Level: %s" ),
+                       *GetActorRepListTypeDebugString( ActorInfo.Actor ), *GetPathNameSafe( Outer ));
+        }
+
+        break;
     }
     return bRemovedSomething;
 }
 
-bool FHexStreamingLevelActorListCollection::RemoveActorFast(const FNewReplicatedActorInfo& ActorInfo,
-                                                            UReplicationGraphNode* Outer)
+bool FHexStreamingLevelActorListCollection::RemoveActorFast(const FNewReplicatedActorInfo& ActorInfo, UReplicationGraphNode* Outer)
 {
     bool bRemovedSomething = false;
     for(FStreamingLevelActors& StreamingList : StreamingLevelLists)
     {
-        if(StreamingList.StreamingLevelName == ActorInfo.StreamingLevelName)
-        {
-            bRemovedSomething = StreamingList.ReplicationActorList.RemoveFast(ActorInfo.Actor);
-            break;
-        }
+        if(StreamingList.StreamingLevelName != ActorInfo.StreamingLevelName)
+            continue;
+
+        bRemovedSomething = StreamingList.ReplicationActorList.RemoveFast(ActorInfo.Actor);
+        break;
     }
+
     return bRemovedSomething;
 }
 
 void FHexStreamingLevelActorListCollection::Reset()
 {
     for(FStreamingLevelActors& StreamingList : StreamingLevelLists)
-    {
         StreamingList.ReplicationActorList.Reset();
-    }
 }
 
 void FHexStreamingLevelActorListCollection::Gather(const FConnectionGatherActorListParameters& Params)
@@ -531,14 +498,9 @@ void FHexStreamingLevelActorListCollection::Gather(const FConnectionGatherActorL
     for(const FStreamingLevelActors& StreamingList : StreamingLevelLists)
     {
         if(Params.CheckClientVisibilityForLevel(StreamingList.StreamingLevelName))
-        {
             Params.OutGatheredReplicationLists.AddReplicationActorList(StreamingList.ReplicationActorList);
-        }
         else
-        {
-            UE_LOG(LogHexRepGraph, Verbose, TEXT( "Level Not Loaded %s. (Client has %d levels loaded)" ),
-                   *StreamingList.StreamingLevelName.ToString( ), Params.ClientVisibleLevelNamesRef.Num( ));
-        }
+            UE_LOG(LogHexRepGraph, Verbose, TEXT( "Level Not Loaded %s. (Client has %d levels loaded)" ), *StreamingList.StreamingLevelName.ToString( ), Params.ClientVisibleLevelNamesRef.Num( ));
     }
 }
 
@@ -549,8 +511,7 @@ void FHexStreamingLevelActorListCollection::DeepCopyFrom(const FHexStreamingLeve
     {
         if(StreamingLevel.ReplicationActorList.Num() > 0)
         {
-            FStreamingLevelActors& NewStreamingLevel = StreamingLevelLists.Emplace_GetRef(
-                StreamingLevel.StreamingLevelName);
+            FStreamingLevelActors& NewStreamingLevel = StreamingLevelLists.Emplace_GetRef( StreamingLevel.StreamingLevelName);
             NewStreamingLevel.ReplicationActorList.CopyContentsFrom(StreamingLevel.ReplicationActorList);
             ensure(NewStreamingLevel.ReplicationActorList.Num( ) == StreamingLevel.ReplicationActorList.Num( ));
         }
@@ -560,18 +521,13 @@ void FHexStreamingLevelActorListCollection::DeepCopyFrom(const FHexStreamingLeve
 void FHexStreamingLevelActorListCollection::GetAll_Debug(TArray<FActorRepListType>& OutArray) const
 {
     for(const FStreamingLevelActors& StreamingLevel : StreamingLevelLists)
-    {
         StreamingLevel.ReplicationActorList.AppendToTArray(OutArray);
-    }
 }
 
 void FHexStreamingLevelActorListCollection::Log(FReplicationGraphDebugInfo& DebugInfo) const
 {
     for(const FStreamingLevelActors& StreamingLevelList : StreamingLevelLists)
-    {
-        LogActorRepList(DebugInfo, StreamingLevelList.StreamingLevelName.ToString(),
-                        StreamingLevelList.ReplicationActorList);
-    }
+        LogActorRepList(DebugInfo, StreamingLevelList.StreamingLevelName.ToString(), StreamingLevelList.ReplicationActorList);
 }
 
 // --------------------------------------------------------------------------------------------------------------------------------------------

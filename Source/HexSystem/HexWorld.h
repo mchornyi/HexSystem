@@ -10,49 +10,51 @@
 UCLASS()
 class HEXSYSTEM_API AHexWorld : public AActor
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
-	// Sets default values for this actor's properties
-	AHexWorld();
+    // Sets default values for this actor's properties
+    AHexWorld();
 
     // Called every frame
-    virtual void Tick( float DeltaTime ) override;
+    virtual void Tick(float DeltaTime) override;
 
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+    // Called when the game starts or when spawned
+    virtual void BeginPlay() override;
 
-    virtual void PostLoad( ) override;
+    virtual void PostLoad() override;;
 
 #if WITH_EDITORONLY_DATA
-    virtual void PostEditChangeProperty( struct FPropertyChangedEvent& PropertyChangedEvent ) override;
+    virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
 
-private:
-
 #if WITH_EDITOR
-    void Generate( );
-    virtual bool ShouldTickIfViewportsOnly( ) const override;
-    void DebugGenerateRepActors( );
+private:
+    void Generate();
+    virtual bool ShouldTickIfViewportsOnly() const override;
     // Called every frame
-    void TickInEditor( float DeltaTime );
+    void TickInEditor();
+public:
+    void DebugGenerateRepActors();
 #endif
 
 public:
-    UPROPERTY( EditInstanceOnly, Category = "HexWorldParams", Meta = ( ClampMin = "1", ClampMax = "100" ) )
+    UPROPERTY(EditInstanceOnly, Category = "HexWorldParams", Meta = ( ClampMin = "1", ClampMax = "100" ))
     FHexLayout HexLayout;
 
-    UPROPERTY( EditInstanceOnly, Category = "HexWorldParams", Meta = ( ClampMin = "1", ClampMax = "100" ) )
+    UPROPERTY(EditInstanceOnly, Category = "HexWorldParams", Meta = ( ClampMin = "1", ClampMax = "100" ))
     uint8 HexRingsNum;
 
-    UPROPERTY( EditInstanceOnly, Category = "HexWorldParams", Meta = ( ClampMin = "0", ClampMax = "1000000" ) )
+    UPROPERTY(EditInstanceOnly, Category = "HexWorldParams", Meta = ( ClampMin = "0", ClampMax = "1000000" ))
     uint8 HexDistVisibility;
 
-    UPROPERTY( EditInstanceOnly, Category = "HexWorldParams" )
+    UPROPERTY(EditInstanceOnly, Category = "HexWorldParams")
     bool bHexGenerateTrigger;
 
 private:
-    UPROPERTY( EditInstanceOnly, Category = "HexWorldParams" )
+    UPROPERTY(EditInstanceOnly, Category = "HexWorldParams")
     TSet<FHex> HexMap;
+
+    FTimerHandle mDebugDrawTimerHandler;
 };

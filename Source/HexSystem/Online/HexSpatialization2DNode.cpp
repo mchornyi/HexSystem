@@ -1,5 +1,6 @@
 #include "HexSpatialization2DNode.h"
 #include "HexCellNode.h"
+//#include "HexDormancyNode.h"
 
 #include "../CommonCVars.h"
 
@@ -21,7 +22,7 @@ UReplicationGraphNode_HexSpatialization2D::UReplicationGraphNode_HexSpatializati
 
 void UReplicationGraphNode_HexSpatialization2D::AddSpatialRebuildBlacklistClass( UClass* Class )
 {
-    mRebuildSpatialBlacklistMap.Set( Class, true );
+    RebuildSpatialBlacklistMap.Set( Class, true );
 }
 
 void UReplicationGraphNode_HexSpatialization2D::NotifyAddNetworkActor( const FNewReplicatedActorInfo& ActorInfo )
@@ -98,7 +99,7 @@ void UReplicationGraphNode_HexSpatialization2D::AddActorInternal_Dynamic( const 
 
     //UE_CLOG( CVar_RepGraph_LogActorRemove > 0, LogReplicationGraph, Display, TEXT( "UReplicationGraph::AddActorInternal_Dynamic %s" ), *actorInfo.actor->GetFullName( ) );
 
-    mDynamicSpatializedActors.Emplace( actorInfo.Actor, actorInfo );
+    DynamicSpatializedActors.Emplace( actorInfo.Actor, actorInfo );
 }
 
 void UReplicationGraphNode_HexSpatialization2D::AddActorInternal_Static( const FNewReplicatedActorInfo& ActorInfo, FGlobalActorReplicationInfo& ActorRepInfo, bool bDormancyDriven )
@@ -109,16 +110,16 @@ void UReplicationGraphNode_HexSpatialization2D::AddActorInternal_Static( const F
     if ( ActorInfo.Actor->IsActorInitialized( ) == false )
     {
         // Make sure its not already in the list. This should really not happen but would be very bad if it did. This list should always be small so doing the safety check seems good.
-        for ( int32 idx = mPendingStaticSpatializedActors.Num( ) - 1; idx >= 0; --idx )
+        for ( int32 idx = PendingStaticSpatializedActors.Num( ) - 1; idx >= 0; --idx )
         {
-            if ( mPendingStaticSpatializedActors[ idx ].actor == ActorInfo.Actor )
+            if ( PendingStaticSpatializedActors[ idx ].actor == ActorInfo.Actor )
             {
-                ////UE_LOG( LogReplicationGraph, Warning, TEXT( "UReplicationGraphNode_HexSpatialization2D::AddActorInternal_Static was called on %s when it was already in the mPendingStaticSpatializedActors list!" ), *actor->GetPathName( ) );
+                ////UE_LOG( LogReplicationGraph, Warning, TEXT( "UReplicationGraphNode_HexSpatialization2D::AddActorInternal_Static was called on %s when it was already in the PendingStaticSpatializedActors list!" ), *actor->GetPathName( ) );
                 return;
             }
         }
 
-        mPendingStaticSpatializedActors.Emplace( ActorInfo.Actor, bDormancyDriven );
+        PendingStaticSpatializedActors.Emplace( ActorInfo.Actor, bDormancyDriven );
         return;
     }
 
@@ -137,35 +138,35 @@ void UReplicationGraphNode_HexSpatialization2D::AddActorInternal_Static_Implemen
     //	//UE_LOG( LogReplicationGraph, Display, TEXT( "UReplicationGraphNode_HexSpatialization2D::AddActorInternal_Static placing %s into static grid at %s" ), *actor->GetPathName( ), *ActorRepInfo.WorldLocation.ToString( ) );
     //}
 
-    mStaticSpatializedActors.Emplace( ActorInfo.Actor, FStaticActorInfo( ActorInfo, bDormancyDriven ) );
+    StaticSpatializedActors.Emplace( ActorInfo.Actor, FStaticActorInfo( ActorInfo, bDormancyDriven ) );
 
     AddStaticActorIntoCell( ActorInfo, ActorRepInfo, bDormancyDriven );
 }
 
-void UReplicationGraphNode_HexSpatialization2D::RemoveActorInternal_Dynamic( const FNewReplicatedActorInfo& actorRepInfo )
+void UReplicationGraphNode_HexSpatialization2D::RemoveActorInternal_Dynamic( const FNewReplicatedActorInfo& ActorRepInfo )
 {
     UE_LOG( LogHexRepGraph, Display, TEXT( __FUNCTION__ ) );
     RG_QUICK_SCOPE_CYCLE_COUNTER( UReplicationGraphNode_HexSpatialization2D_RemoveActorInternal_Dynamic );
 
     check( GraphGlobals.IsValid( ) );
 
-    FDynamicActorInfo* info = mDynamicSpatializedActors.Find( actorRepInfo.Actor );
-    if ( !info )
+    FDynamicActorInfo* DynamicActorInfo = DynamicSpatializedActors.Find( ActorRepInfo.Actor );
+    if ( !DynamicActorInfo )
     {
-        UE_LOG( LogHexRepGraph, Warning, TEXT( "RemoveActorInternal_Dynamic attempted remove %s from streaming dynamic list but it was not there." ), *GetActorRepListTypeDebugString( actorRepInfo.Actor ) );
+        UE_LOG( LogHexRepGraph, Warning, TEXT( "RemoveActorInternal_Dynamic attempted remove %s from streaming dynamic list but it was not there." ), *GetActorRepListTypeDebugString( ActorRepInfo.Actor ) );
         return;
     }
 
-    if ( !FMath::IsNaN( info->prevLocation.X ) && !FMath::IsNaN( info->prevLocation.Y ) )
+    if ( !FMath::IsNaN( DynamicActorInfo->prevLocation.X ) && !FMath::IsNaN( DynamicActorInfo->prevLocation.Y ) )
     {
-        const FGlobalActorReplicationInfo& actorRepGlobalInfo = GraphGlobals->GlobalActorReplicationInfoMap->Get( actorRepInfo.Actor );
+        const FGlobalActorReplicationInfo& actorRepGlobalInfo = GraphGlobals->GlobalActorReplicationInfoMap->Get( ActorRepInfo.Actor );
 
-        auto hexCells = GetHexCellCoverage( FVector( info->prevLocation, 0.0f ), actorRepGlobalInfo.Settings.GetCullDistance( ) );
+        auto hexCells = GetHexCellCoverage( FVector( DynamicActorInfo->prevLocation, 0.0f ), actorRepGlobalInfo.Settings.GetCullDistance( ) );
         for ( auto hexCell : hexCells )
-            hexCell->RemoveDynamicActor( actorRepInfo );
+            hexCell->RemoveDynamicActor( ActorRepInfo );
     }
 
-    mDynamicSpatializedActors.Remove( actorRepInfo.Actor );
+    DynamicSpatializedActors.Remove( ActorRepInfo.Actor );
 }
 
 void UReplicationGraphNode_HexSpatialization2D::RemoveActorInternal_Static( const FNewReplicatedActorInfo& actorRepInfo )
@@ -175,14 +176,14 @@ void UReplicationGraphNode_HexSpatialization2D::RemoveActorInternal_Static( cons
 
     check( GraphGlobals.IsValid( ) );
 
-    if ( mStaticSpatializedActors.Remove( actorRepInfo.Actor ) <= 0 )
+    if ( StaticSpatializedActors.Remove( actorRepInfo.Actor ) <= 0 )
     {
         // May have been a pending actor
-        for ( int32 idx = mPendingStaticSpatializedActors.Num( ) - 1; idx >= 0; --idx )
+        for ( int32 idx = PendingStaticSpatializedActors.Num( ) - 1; idx >= 0; --idx )
         {
-            if ( mPendingStaticSpatializedActors[ idx ].actor == actorRepInfo.Actor )
+            if ( PendingStaticSpatializedActors[ idx ].actor == actorRepInfo.Actor )
             {
-                mPendingStaticSpatializedActors.RemoveAtSwap( idx, 1, false );
+                PendingStaticSpatializedActors.RemoveAtSwap( idx, 1, false );
                 return;
             }
         }
@@ -230,8 +231,8 @@ void UReplicationGraphNode_HexSpatialization2D::OnNetDormancyChange( FActorRepLi
 void UReplicationGraphNode_HexSpatialization2D::NotifyResetAllNetworkActors( )
 {
     UE_LOG( LogHexRepGraph, Display, TEXT( __FUNCTION__ ) );
-    mStaticSpatializedActors.Reset( );
-    mDynamicSpatializedActors.Reset( );
+    StaticSpatializedActors.Reset( );
+    DynamicSpatializedActors.Reset( );
     Super::NotifyResetAllNetworkActors( );
 }
 
@@ -268,7 +269,7 @@ void UReplicationGraphNode_HexSpatialization2D::PrepareForReplication( )
     {
         RG_QUICK_SCOPE_CYCLE_COUNTER( UReplicationGraphNode_HexSpatialization2D_BuildDynamic );
 
-        for ( auto& it : mDynamicSpatializedActors )
+        for ( auto& it : DynamicSpatializedActors )
         {
             FActorRepListType& dynamicActor = it.Key;
             FDynamicActorInfo& dynamicActorInfo = it.Value;
@@ -286,10 +287,10 @@ void UReplicationGraphNode_HexSpatialization2D::PrepareForReplication( )
             FGlobalActorReplicationInfo& actorRepGlobalInfo = globalRepMap->Get( dynamicActor );
 
             // Check if this resets spatial bias
-            const FVector actorLocationCurrent = dynamicActor->GetActorLocation( );
-            actorRepGlobalInfo.WorldLocation = actorLocationCurrent;
+            const FVector CurrLocation = dynamicActor->GetActorLocation( );
+            actorRepGlobalInfo.WorldLocation = CurrLocation;
 
-            auto curHexCellsForAdding = GetHexCellCoverage( actorLocationCurrent, actorRepGlobalInfo.Settings.GetCullDistance( ) );
+            auto curHexCellsForAdding = GetHexCellCoverage( CurrLocation, actorRepGlobalInfo.Settings.GetCullDistance( ) );
 
             if ( !FMath::IsNaN( dynamicActorInfo.prevLocation.X ) && !FMath::IsNaN( dynamicActorInfo.prevLocation.Y ) )
             {
@@ -316,16 +317,16 @@ void UReplicationGraphNode_HexSpatialization2D::PrepareForReplication( )
                     curHexCellToAdd->AddDynamicActor( dynamicActorInfo.actorInfo );
             }
 
-            dynamicActorInfo.prevLocation = FVector2D( actorLocationCurrent );
+            dynamicActorInfo.prevLocation = FVector2D( CurrLocation );
         }
     }
 
     // -------------------------------------------
     //	Pending Spatial Actors
     // -------------------------------------------
-    for ( int32 idx = mPendingStaticSpatializedActors.Num( ) - 1; idx >= 0; --idx )
+    for ( int32 idx = PendingStaticSpatializedActors.Num( ) - 1; idx >= 0; --idx )
     {
-        FPendingStaticActors& pendingStaticActor = mPendingStaticSpatializedActors[ idx ];
+        FPendingStaticActors& pendingStaticActor = PendingStaticSpatializedActors[ idx ];
         if ( pendingStaticActor.actor->IsActorInitialized( ) == false )
             continue;
 
@@ -334,7 +335,7 @@ void UReplicationGraphNode_HexSpatialization2D::PrepareForReplication( )
 
         AddActorInternal_Static_Implementation( newActorInfo, globalInfo, pendingStaticActor.bDormancyDriven );
 
-        mPendingStaticSpatializedActors.RemoveAtSwap( idx, 1, false );
+        PendingStaticSpatializedActors.RemoveAtSwap( idx, 1, false );
     }
 }
 
@@ -365,7 +366,7 @@ void UReplicationGraphNode_HexSpatialization2D::GatherActorListsForConnection( c
 
     for ( const FNetViewer& curViewer : Params.Viewers )
     {
-        if ( curViewer.ViewLocation.Z > mConnectionMaxZ )
+        if ( curViewer.ViewLocation.Z > ConnectionMaxZ )
             continue;
 
         // Figure out positioning
@@ -392,7 +393,7 @@ void UReplicationGraphNode_HexSpatialization2D::GatherActorListsForConnection( c
         //@todo: if this is clamp view loc this is now redundant...
         lastLocationForConnection = lastLocationForConnection.BoundToCube( HALF_WORLD_MAX );
 
-        const FHexLayout tmpHexLayout( hexsystem::LayoutPointy, { Global_WorldHexSize, Global_WorldHexSize }, { 0.0f, 0.0f } );
+        const FHexLayout tmpHexLayout( hexsystem::LayoutPointy, { GWorldHexSize, GWorldHexSize }, { 0.0f, 0.0f } );
         FPlayerHexCellInfo newPlayerCell;
         newPlayerCell.curHex = FHexModel::HexRound( FHexModel::PixelToHex( tmpHexLayout, FPoint( clampedViewLoc ) ) );
         newPlayerCell.prevHex = FHexModel::HexRound( FHexModel::PixelToHex( tmpHexLayout, FPoint( lastLocationForConnection ) ) );
@@ -403,7 +404,7 @@ void UReplicationGraphNode_HexSpatialization2D::GatherActorListsForConnection( c
         // If we have not operated on this cell yet (meaning it's not shared by anyone else), gather for it.
         if ( !uniqueCurrentHexes.Contains( newPlayerCell.curHex ) )
         {
-            UReplicationGraphNode_HexCell* cellNode = mHexCells.FindRef( newPlayerCell.curHex );
+            UReplicationGraphNode_HexCell* cellNode = HexCells.FindRef( newPlayerCell.curHex );
             if ( cellNode )
                 cellNode->GatherActorListsForConnection( Params );
 
@@ -430,16 +431,16 @@ void UReplicationGraphNode_HexSpatialization2D::GatherActorListsForConnection( c
 
                 FActorRepListRefView dormantActorList;
 
-                if ( UReplicationGraphNode_HexCell* hexCell = *mHexCells.Find( hexCellInfo.curHex ) )
+                if ( UReplicationGraphNode_HexCell* hexCell = *HexCells.Find( hexCellInfo.curHex ) )
                 {
-                    if ( UReplicationGraphNode_HexDormancyNode* dormancyNode = hexCell->GetDormancyNode( ) )
+                    if ( auto dormancyNode = hexCell->GetDormancyNode( ) )
                         dormancyNode->ConditionalGatherDormantDynamicActors( dormantActorList, Params, nullptr );
                 }
 
                 // Determine dormant actors for our last location. Do not add actors if they are relevant to anyone.
-                if ( UReplicationGraphNode_HexCell* prevCell = *mHexCells.Find( hexCellInfo.prevHex ) )
+                if ( UReplicationGraphNode_HexCell* prevCell = *HexCells.Find( hexCellInfo.prevHex ) )
                 {
-                    if ( UReplicationGraphNode_HexDormancyNode* dormancyNode = prevCell->GetDormancyNode( ) )
+                    if ( auto dormancyNode = prevCell->GetDormancyNode( ) )
                         dormancyNode->ConditionalGatherDormantDynamicActors( prevDormantActorList, Params, &dormantActorList, true );
                 }
             }
@@ -483,7 +484,7 @@ void UReplicationGraphNode_HexSpatialization2D::NotifyActorCullDistChange( AActo
     RG_QUICK_SCOPE_CYCLE_COUNTER( UReplicationGraphNode_HexSpatialization2D_NotifyActorCullDistChange );
 
     // If this actor is statically spatialized then we need to remove it and readd it (this is a little wasteful but in practice not common/only happens at startup)
-    if ( FStaticActorInfo* staticActorInfo = mStaticSpatializedActors.Find( actor ) )
+    if ( FStaticActorInfo* staticActorInfo = StaticSpatializedActors.Find( actor ) )
     {
         // Remove with old distance
         auto hexCells = GetHexCellCoverage( actorGlobalInfo.WorldLocation, oldDist );
@@ -495,7 +496,7 @@ void UReplicationGraphNode_HexSpatialization2D::NotifyActorCullDistChange( AActo
         for ( auto hexCell : hexCells )
             hexCell->AddStaticActor( staticActorInfo->actorInfo, actorGlobalInfo, staticActorInfo->bDormancyDriven );
     }
-    else if ( FDynamicActorInfo* dynamicActorInfo = mDynamicSpatializedActors.Find( actor ) )
+    else if ( FDynamicActorInfo* dynamicActorInfo = DynamicSpatializedActors.Find( actor ) )
     {
         // Pull dynamic actor out of the grid. We will put him back on the next gather
         if ( !FMath::IsNaN( dynamicActorInfo->prevLocation.X ) && !FMath::IsNaN( dynamicActorInfo->prevLocation.Y ) )
@@ -512,7 +513,7 @@ void UReplicationGraphNode_HexSpatialization2D::NotifyActorCullDistChange( AActo
 
 #if !UE_BUILD_SHIPPING
         // Might be in the pending init list
-        if ( mPendingStaticSpatializedActors.FindByKey( actor ) == nullptr )
+        if ( PendingStaticSpatializedActors.FindByKey( actor ) == nullptr )
         {
             UE_LOG( LogHexRepGraph, Warning, TEXT( "UReplicationGraphNode_HexSpatialization2D::NotifyActorCullDistChange. %s Changed Cull Distance (%.2f -> %.2f) but is not in static or dynamic actor lists. %s" ), *actor->GetPathName( ), oldDist, actorGlobalInfo.Settings.GetCullDistance( ), *GetPathName( ) );
 
@@ -570,12 +571,12 @@ TArray<UReplicationGraphNode_HexCell*> UReplicationGraphNode_HexSpatialization2D
     TArray<UReplicationGraphNode_HexCell*> result;
     result.Reserve( 100 );
 
-    const FHexLayout tmpHexLayout( hexsystem::LayoutPointy, { Global_WorldHexSize, Global_WorldHexSize }, { 0.0f, 0.0f } );
-    const TArray<FHex> hexCoverage = FHexModel::HexCoverage( tmpHexLayout, FVector2D( clampedLocation ), cullDistance, Global_WorldHexRingsNum, Global_WorldHexRingsNum * 2 );
+    const FHexLayout tmpHexLayout( hexsystem::LayoutPointy, { GWorldHexSize, GWorldHexSize }, { 0.0f, 0.0f } );
+    const TArray<FHex> hexCoverage = FHexModel::HexCoverage( tmpHexLayout, FVector2D( clampedLocation ), cullDistance, GWorldHexRingsNum, GWorldHexRingsNum * 2 );
 
     for ( const FHex& hex : hexCoverage )
     {
-        UReplicationGraphNode_HexCell*& hexCell = mHexCells.FindOrAdd( hex );
+        UReplicationGraphNode_HexCell*& hexCell = HexCells.FindOrAdd( hex );
         if ( !hexCell )
             CreateHexCellNode( hexCell, hex );
 
@@ -592,7 +593,7 @@ void UReplicationGraphNode_HexSpatialization2D::RepGraphVerifySlow( const FActor
 
     // Verify this actor is in no nodes. This is pretty slow!
     bool exists = false;
-    for ( auto& hexCell : mHexCells )
+    for ( auto& hexCell : HexCells )
     {
         TArray<AActor*> allActors;
         hexCell.Value->GetAllActorsInNode_Debugging( allActors );

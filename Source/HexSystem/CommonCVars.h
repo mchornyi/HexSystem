@@ -2,15 +2,15 @@
 
 #include "HAL/IConsoleManager.h"
 
-extern int Global_WorldHexRingsNum;
-extern float Global_WorldHexSize;
-extern const float Global_NetCullDistanceHexRepActor;
-extern const uint32 Global_RepActorsNumPerHex;
+extern int GWorldHexRingsNum;
+extern float GWorldHexSize;
+extern const float GNetCullDistanceHexRepActor;
+extern const uint32 GRepActorsNumPerHex;
+extern bool GDebugEnableFlushingForDormantActorInTick;
 
-extern bool Global_DebugEnableFlushingForDormantActor;
+extern TAutoConsoleVariable<bool> GCVar_DebugShowInfoForHexRepActor;
 
-extern TAutoConsoleVariable<bool> CVar_DebugShowInfoForHexRepActor;
-
-extern TAutoConsoleVariable<bool> CVar_DebugEnableFlushingForDormantActor;
+//extern TAutoConsoleVariable<bool> GCVar_DebugEnableFlushingForDormantActorInTick;
 
 DECLARE_LOG_CATEGORY_EXTERN( LogHexRepGraph, Log, All );
+DECLARE_LOG_CATEGORY_EXTERN( LogHexSystem, Log, All );

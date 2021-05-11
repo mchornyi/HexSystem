@@ -1,5 +1,4 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-#if 1
 #pragma once
 
 #include "CoreMinimal.h"
@@ -166,4 +165,3 @@ private:
     TArray<FActorRepListRefView> ReplicationActorLists;
     FActorRepListRefView ForceNetUpdateReplicationActorList;
 };
-#endif

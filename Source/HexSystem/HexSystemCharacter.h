@@ -124,14 +124,21 @@ public:
 	UFUNCTION( BlueprintCallable, Category = "Health" )
 	float TakeDamage( float DamageTaken, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser ) override;
 
+	UFUNCTION( Server, Reliable )
+    void ServerRPCEnableFlushing( bool value );
+
+    UFUNCTION( Server, Reliable )
+    void ServerRPCFlushOnce();
+
+    UFUNCTION( Client, Reliable )
+    void ClientRPCEnableFlushing( bool value );
+
 private:
 
 	/** The player's current health. When reduced to 0, they are considered dead.*/
 	UPROPERTY( ReplicatedUsing = OnRep_CurrentHealth )
 	float CurrentHealth;
 
-	UFUNCTION( Server, Reliable )
-    void ServerRPCEnableFlushing( bool value );
 private:
 	/** RepNotify for changes made to current health.*/
 	UFUNCTION( )
