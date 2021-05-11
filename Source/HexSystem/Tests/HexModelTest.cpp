@@ -172,10 +172,7 @@ bool FHexModelTest::RunTest( const FString& Parameters )
         const FHex hexCenter( -2, 2, 0 );
         const TArray<FHex> result = FHexModel::HexRing( hexCenter, 0 );
 
-        const FHex hexArr[ ] = { {-2, 2, 0} };
-        TArray<FHex> expected( hexArr, UE_ARRAY_COUNT( hexArr ) );
-
-        TestEqual( TEXT( "HexRingZeroCenter" ), result, expected );
+        TestEqual( TEXT( "HexRingZeroCenter" ), result.Num(), 0 );
     }
 
     //Test: HexRing=1
@@ -184,7 +181,7 @@ bool FHexModelTest::RunTest( const FString& Parameters )
         const TArray<FHex> result = FHexModel::HexRing( hexCenter, 1 );
 
         // The order matters for comparison
-        const FHex hexArr[ ] = { {-2, 2, 0}, {-3, 2, 1}, {-2, 1, 1}, {-1, 1, 0}, {-1, 2, -1}, {-2, 3, -1}, {-3, 3, 0}
+        const FHex hexArr[ ] = {{-3, 2, 1}, {-2, 1, 1}, {-1, 1, 0}, {-1, 2, -1}, {-2, 3, -1}, {-3, 3, 0}
         };
 
         TArray<FHex> expected( hexArr, UE_ARRAY_COUNT( hexArr ) );
@@ -198,7 +195,7 @@ bool FHexModelTest::RunTest( const FString& Parameters )
         const TArray<FHex> result = FHexModel::HexRing( hexCenter, 2 );
 
         // The order matters for comparison
-        const FHex hexArr[ ] = { {-2, 2, 0}, {-4, 2, 2}, {-3, 1, 2}, {-2, 0, 2}, {-1, 0, 1},
+        const FHex hexArr[ ] = { {-4, 2, 2}, {-3, 1, 2}, {-2, 0, 2}, {-1, 0, 1},
             {0, 0, 0}, {0, 1, -1}, {0, 2, -2}, {-1, 3, -2}, {-2, 4, -2}, {-3, 4, -1}, {-4, 4, 0}, {-4, 3, 1}
         };
 
@@ -207,7 +204,7 @@ bool FHexModelTest::RunTest( const FString& Parameters )
         TestEqual( TEXT( "HexRing2" ), result, expected );
     }
 
-    //Test: HexCoverage1
+    //Test: HexCoverage
     {
         const FVector2D originLoc( -306.109924f, -84.516525f );
         FHexLayout layout;
@@ -221,7 +218,7 @@ bool FHexModelTest::RunTest( const FString& Parameters )
 
         TArray<FHex> expected( hexArr, UE_ARRAY_COUNT( hexArr ) );
 
-        TestEqual( TEXT( "HexCoverage1" ), result, expected );
+        TestEqual( TEXT( "HexCoverage" ), result, expected );
     }
 
     //Test: HexCoverageWithMaxRing
@@ -298,6 +295,25 @@ bool FHexModelTest::RunTest( const FString& Parameters )
         TArray<FHex> expected( hexArr, UE_ARRAY_COUNT( hexArr ) );
 
         TestEqual( TEXT( "HexCoverageWithMaxDistWithLocation" ), result, expected );
+    }
+
+     //Test:HexCoverageDuplicationCheck
+    {
+        const FVector2D originLoc( 287.213684f, 331.714294f );
+        FHexLayout layout;
+        layout.size = { 200.0f, 200.0f };
+        layout.origin = { 0.0f, 0.0f };
+
+        const TArray<FHex> result = FHexModel::HexCoverage( layout, originLoc, 15000.0f, 1, 2 );
+
+        // The order matters for comparison
+        const FHex hexArr[ ] = {
+            {0, 1, -1}, {0, 1, -1}, {-1, 1, 0}, {0, 0, 0}, {1, 0, -1}, {0, 1, -1}, {-1, 0, 1}, {0, -1, 1}, {1, -1, 0}
+        };
+
+        TArray<FHex> expected( hexArr, UE_ARRAY_COUNT( hexArr ) );
+
+        TestNotEqual( TEXT( "HexCoverageDuplicationCheck" ), result, expected );
     }
 
     return true;

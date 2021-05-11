@@ -247,11 +247,11 @@ namespace hexsystem
 
         static TArray<FHex> HexRing( const FHex hexCenter, const uint32 ring )
         {
-            TArray<FHex> result;
-            result.AddUnique( hexCenter );
-
             if ( ring == 0 )
-                return result;
+                return {};
+
+            TArray<FHex> result;
+            //result.AddUnique( hexCenter );
 
             FHex hex = HexAdd( hexCenter, HexScale( HexDirection( 4 ), ring ) );
 
